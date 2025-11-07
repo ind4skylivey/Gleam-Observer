@@ -29,10 +29,10 @@
 > 💜 **Experience hardware monitoring like never before** - where functionality meets aesthetics in a terminal-based masterpiece.
 
 <p align="center">
+  <a href="#-see-it-in-action"><kbd> <br> 📸 Screenshots <br> </kbd></a>
   <a href="#-features"><kbd> <br> ✨ Features <br> </kbd></a>
   <a href="#-installation"><kbd> <br> 📦 Installation <br> </kbd></a>
   <a href="#-usage"><kbd> <br> 🚀 Usage <br> </kbd></a>
-  <a href="#-screenshots"><kbd> <br> 📸 Screenshots <br> </kbd></a>
   <a href="#️-configuration"><kbd> <br> ⚙️ Configuration <br> </kbd></a>
 </p>
 
@@ -54,19 +54,19 @@ GleamObserver isn't just another resource monitor. It's the **future of terminal
 
 Built with **Rust 🦀** for power users who demand both **style and substance**.
 
+---
+
+## 📸 See It In Action
+
 <div align="center">
 
-```ascii
-     ┌─────────────────────────────────────┐
-     │  🌌 Catppuccin Mocha Theme          │
-     │  ▓▒ Cyberpunk ASCII Art             │
-     │  📊 Predictive Analytics            │
-     │  🎮 130+ GPU Models Recognized      │
-     │  ⚡ Single Binary • Zero Config     │
-     └─────────────────────────────────────┘
-```
+<img src="assets/screenshot.png" alt="GleamObserver Dashboard - Real-time Hardware Monitoring" width="100%">
+
+*🌌 Catppuccin Mocha Theme • ▓▒ Cyberpunk ASCII Art • 📊 Predictive Analytics • 🎮 130+ GPU Models • ⚡ Single Binary*
 
 </div>
+
+---
 
 ### 🌌 Why GleamObserver Stands Out
 
@@ -693,64 +693,6 @@ nvidia_enabled = true
 amd_enabled = true
 intel_enabled = true
 ```
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-### 🎨 **Dashboard View** - Cyberpunk Aesthetic in Action
-
-</div>
-
-```
-  ◆ GleamObserver ◆  Universal Hardware Monitor
-
-╭─ CPU ────────────────────────────────────────────────────────────╮
-│ ████████████████████████░░░ 75.3%                                 │
-│ AMD Ryzen 9 7950X3D • 16 Cores / 32 Threads • 5.7 GHz            │
-│ History                                                          │
-│ ▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▃▄▅▆▇█▇▆▅▄▃▂▁▂▃▄▅▆▇█▇▆▅▄▃      │
-╰──────────────────────────────────────────────────────────────────╯
-
-╭─ RAM ──────────────────────────╮  ╭─ SWAP ───────────────────────╮
-│ ██████████████░░░░░░ 48.2%     │  │ ██░░░░░░░░░░░░░░░░░░ 8.5%     │
-│ 30.9 GB / 64.0 GB              │  │ 4.3 GB / 50.0 GB             │
-│ Mem History                    │  │                              │
-│ ▃▄▅▅▆▆▇▇▆▅▄▃▃▄▅▆▇█▇▆▅          │  │ ▁▁▁▁▁▂▂▂▂▂▁▁▁▁▁▁▁▁        │
-╰────────────────────────────────╯  ╰──────────────────────────────╯
-
-╭─ GPU ──────────────────────────────────────┬─ System Info ────────────╮
-│ ◆ GPU 0 AMD                                │   ▓▒▓▒▓ ▓▒▓▒▓ ▓▒▓      │
-│ Sapphire NITRO+ Radeon RX 7900 XTX Vapor-X│ ◆ Gleam0bserver         │
-│   ├─ Temp: 68.0°C  Usage: 87.3%           │                          │
-│   ├─ Memory: 18432 MB / 24576 MB (75.0%)  │ 🖥️  BATTLESTATION-ZERO   │
-│   ├─ Power: 355W / 450W                   │ 🐧 Arch Linux            │
-│   ├─ Efficiency: 0.25%/W                  │ ⚙️  Kernel 6.11.5-zen1   │
-│   ├─ Core: 2680MHz  Memory: 2500MHz       │ 📊 CPU: 32 Threads       │
-│   ├─ Fan: 2847 RPM (68%)                  │ 🔢 Processes: 347        │
-│   └─ GPU Processes:                        │ ⏱️  Uptime: 8d 14h 32m  │
-│       • blender (PID: 15234) - 8.2 GB     │                          │
-│       • davinci (PID: 18821) - 6.4 GB     │                          │
-╰────────────────────────────────────────────┴──────────────────────────╯
-
-╭─ Trends ─────────────────────────────────────────────────────────────╮
-│ ↗ GPU Memory trending up (R²: 0.89) - will reach 90% in ~23 minutes │
-│ → CPU stable at 75% (R²: 0.15)                                       │
-│ ↘ System RAM decreasing (R²: 0.67) - freeing memory                 │
-╰──────────────────────────────────────────────────────────────────────╯
-
-[q] Quit | [Tab] Processes | [h] History | [p] Pause | ▶ RUNNING
-```
-
-<div align="center">
-
-*High-end workstation setup: AMD Ryzen 9 7950X3D • 64GB DDR5 • Sapphire NITRO+ Radeon RX 7900 XTX Vapor-X*
-
-**Featuring Catppuccin Mocha theme with cyberpunk ASCII art**
-
-</div>
 
 ---
 
