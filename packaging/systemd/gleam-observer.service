@@ -1,0 +1,19 @@
+[Unit]
+Description=GleamObserver - System Monitor Daemon with System Tray
+After=graphical-session.target network.target snixembed.service
+PartOf=graphical-session.target
+Requires=snixembed.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/gleam-tray
+Restart=always
+RestartSec=3
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gleam-observer
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target graphical-session.target

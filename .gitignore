@@ -1,0 +1,37 @@
+# Rust
+/target
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Config
+config.toml
+
+# Documentation artifacts
+docs/*.html
+docs/*.pdf
+
+# Planning documents (not for version control)
+docs/planning/
+*Detalles*.md
+*gleamObserver*.md
+*Gleam-Observer*.md
+gleam_observer_considerations.json
+plan_monitor_universal.csv
+README_TEMPLATE.md
+gleam-linux-x86_64
+gleam-linux-x86_64.sha256

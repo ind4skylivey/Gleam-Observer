@@ -1,0 +1,67 @@
+[package]
+name = "gleam_observer"
+version = "1.5.2"
+edition = "2021"
+authors = ["il1v3y"]
+description = "Universal Hardware Monitor - Cross-platform system and GPU monitoring"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ind4skylivey/Gleam-Observer"
+keywords = ["monitoring", "gpu", "system", "tui", "hardware"]
+categories = ["command-line-utilities", "hardware-support"]
+
+[[bin]]
+name = "gleam"
+path = "src/main.rs"
+
+[[bin]]
+name = "gleam-tray"
+path = "src/bin/tray.rs"
+
+[dependencies]
+# Core universal (always included)
+sysinfo = "0.31"
+ratatui = "0.28"
+crossterm = "0.28"
+tokio = { version = "1.40", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+thiserror = "1.0"
+anyhow = "1.0"
+chrono = "0.4"
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.29", features = ["signal"] }
+notify-rust = "4.11"
+clap = { version = "4.5", features = ["derive"] }
+log = "0.4"
+env_logger = "0.11"
+tray-item = { version = "0.10", optional = true, features = ["libappindicator"] }
+signal-hook = { version = "0.3", optional = true }
+
+# GPU vendors (optional via features)
+nvml-wrapper = { version = "0.10", optional = true }
+libloading = { version = "0.8", optional = true }
+
+# Platform-specific
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = { version = "0.9", optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[features]
+default = ["nvidia", "amd", "intel", "systray"]
+nvidia = ["nvml-wrapper"]
+amd = ["libloading"]
+intel = []
+apple-gpu = ["core-foundation"]
+systray = ["tray-item", "signal-hook"]
+headless = []
+all = ["nvidia", "amd", "intel", "apple-gpu", "systray"]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

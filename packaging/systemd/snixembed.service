@@ -1,0 +1,14 @@
+[Unit]
+Description=snixembed - StatusNotifierItem to XEmbed proxy
+After=graphical-session.target dbus.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/snixembed
+Restart=always
+RestartSec=3
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+
+[Install]
+WantedBy=default.target graphical-session.target

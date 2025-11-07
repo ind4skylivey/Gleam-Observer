@@ -1,0 +1,46 @@
+# GleamObserver Configuration File
+# Save this file to: ~/.config/gleam-observer/config.toml
+
+[refresh]
+# Refresh interval in milliseconds
+interval_ms = 1000
+
+# Number of historical samples to keep in memory
+history_samples = 60
+
+[alerts]
+# Enable or disable alert system
+enabled = true
+
+# CPU usage threshold (percentage)
+cpu_threshold = 85.0
+
+# Memory usage threshold (percentage)
+memory_threshold = 90.0
+
+# SWAP usage threshold (percentage)
+swap_threshold = 80.0
+
+# GPU temperature threshold (Celsius)
+gpu_temp_threshold = 75.0
+
+# GPU utilization threshold (percentage)
+gpu_util_threshold = 95.0
+
+# GPU memory usage threshold (percentage)
+gpu_mem_threshold = 90.0
+
+[display]
+# Theme: "dark" or "light"
+theme = "dark"
+
+# Show process list
+show_processes = true
+
+# Number of processes to display
+process_count = 10
+[trends]
+enabled = true
+sample_interval_secs = 1
+min_confidence = 0.5  # Lower threshold to show more trends
+show_stable_trends = true  # Show all trends for visibility

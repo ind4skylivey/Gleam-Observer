@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=GleamObserver
+GenericName=System Monitor
+Comment=Hardware monitoring daemon with system tray integration
+Exec=/usr/bin/gleam-tray
+Icon=gleamobserver
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=system;monitor;hardware;cpu;gpu;memory;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
+Hidden=false
+NoDisplay=false

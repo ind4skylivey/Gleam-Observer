@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=GleamObserver
+GenericName=System Monitor
+Comment=Hardware monitoring tool with cyberpunk aesthetics
+Exec=alacritty -e gleam
+Icon=gleamobserver
+Terminal=false
+Categories=System;Monitor;Utility;
+Keywords=system;monitor;hardware;cpu;gpu;memory;performance;
+StartupNotify=true
+NoDisplay=false
