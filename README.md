@@ -1,7 +1,5 @@
 <div align="center">
-
-<img src="assets/banner.png" alt="GleamObserver Banner" width="100%">
-
+<img width="1536" height="1024" alt="banner" src="https://github.com/user-attachments/assets/19914c67-77d4-4d58-8c7a-0f86847a72ed" />
 <br>
 
 ### 🌌 A Universal Hardware Monitoring Tool with **Cyberpunk Aesthetic**
@@ -59,8 +57,8 @@ Built with **Rust 🦀** for power users who demand both **style and substance**
 ## 📸 See It In Action
 
 <div align="center">
+<img width="1408" height="736" alt="screenshot" src="https://github.com/user-attachments/assets/c203cb1e-c20f-44cf-a4d8-bcff7ab0566a" />
 
-<img src="assets/screenshot.png" alt="GleamObserver Dashboard - Real-time Hardware Monitoring" width="100%">
 
 *🌌 Catppuccin Mocha Theme • ▓▒ Cyberpunk ASCII Art • 📊 Predictive Analytics • 🎮 130+ GPU Models • ⚡ Single Binary*
 
