@@ -5,7 +5,7 @@ pkgrel=4
 pkgdesc="Universal Hardware Monitor - TUI with Cyberpunk Aesthetics"
 arch=('x86_64')
 url="https://github.com/ind4skylivey/Gleam-Observer"
-license=('MIT' 'Apache')
+license=('GPL-3.0-only')
 depends=('gcc-libs')
 makedepends=('rust' 'cargo' 'git')
 optdepends=(
@@ -49,8 +49,7 @@ package() {
     # Config example
     install -Dm644 "config/default.toml" "$pkgdir/usr/share/doc/$pkgname/config-example.toml"
     
-    # Licenses
-    install -Dm644 LICENSE-MIT "$pkgdir/usr/share/licenses/$pkgname/LICENSE-MIT"
-    install -Dm644 LICENSE-APACHE "$pkgdir/usr/share/licenses/$pkgname/LICENSE-APACHE"
+    # License
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
     install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
 }

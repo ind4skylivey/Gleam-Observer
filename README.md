@@ -5,7 +5,7 @@
 ### 🌌 A Universal Hardware Monitoring Tool with **Cyberpunk Aesthetic**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-cba6f7?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-cba6f7?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License">
   <img src="https://img.shields.io/badge/Rust-1.70%2B-f38ba8?style=for-the-badge&logo=rust&logoColor=white" alt="Rust">
   <img src="https://img.shields.io/badge/Platform-Linux-89b4fa?style=for-the-badge&logo=linux&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/GPU-NVIDIA%20%7C%20AMD%20%7C%20Intel-a6e3a1?style=for-the-badge&logo=amd&logoColor=white" alt="GPU">
@@ -886,33 +886,13 @@ macOS and Windows support will bring the same cyberpunk aesthetic and profession
 
 ---
 
-## 📜 License & Copyright
+## 📜 License
 
-**Copyright © 2024 ind4skylivey. All Rights Reserved.**
+**Copyright © 2024–2026 ind4skylivey**
 
-This software is dual-licensed for **personal use only**:
-- MIT License ([LICENSE-MIT](LICENSE-MIT))
-- Apache License 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
+This project is licensed under the [GNU General Public License v3.0](LICENSE) (`GPL-3.0-only`).
 
-### ⚠️ Usage Restrictions
-
-**PERMITTED:**
-- ✅ Personal use and installation
-- ✅ Modifying for personal use only
-- ✅ Reporting bugs and issues
-- ✅ Sharing the official repository link
-
-**PROHIBITED:**
-- ❌ Commercial use without written permission
-- ❌ Redistribution of modified versions
-- ❌ Forking for public distribution
-- ❌ Copying code to other projects
-- ❌ Creating derivative works for distribution
-- ❌ Removing copyright notices
-
-This is a **unique project** created and maintained exclusively by ind4skylivey. Unauthorized copying, modification for redistribution, or commercial use is strictly prohibited.
-
-For commercial licensing inquiries, contact the author.
+You may use, study, share, and modify it under the terms of the GPL-3.0. See [LICENSE](LICENSE) for the full text.
 
 ---
 
