@@ -49,7 +49,9 @@ jobs:
       - name: Headless smoke test
         run: |
           cargo build --no-default-features
-          timeout 10 ./target/debug/gleam --headless > /dev/null
+          timeout 10 ./target/debug/gleam --headless --export json > /tmp/gleam_smoke.log || test $? -eq 124
+          grep -q '"cpu"' /tmp/gleam_smoke.log
+          echo "Headless smoke test passed: JSON metrics emitted"
 
   build:
     name: Build

@@ -26,7 +26,8 @@ pub struct GPUManager {
 
 impl GPUManager {
     pub fn new() -> Self {
-        let backends: Vec<Box<dyn GPUBackend>> = Vec::new();
+        #[allow(unused_mut)]
+        let mut backends: Vec<Box<dyn GPUBackend>> = Vec::new();
 
         #[cfg(feature = "nvidia")]
         {
