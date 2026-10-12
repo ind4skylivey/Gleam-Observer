@@ -808,7 +808,6 @@ fn draw_trends_panel(f: &mut Frame, area: Rect, app: &App) {
         b.severity
             .partial_cmp(&a.severity)
             .unwrap_or(Ordering::Equal)
-            .reverse()
     });
 
     let mut lines: Vec<Line> = Vec::new();
