@@ -4,7 +4,7 @@ use signal_hook::{consts::SIGTERM, iterator::Signals};
 
 #[cfg(all(unix, feature = "systray"))]
 pub fn setup_signal_handlers() -> Result<()> {
-    let mut signals = Signals::new(&[SIGTERM, signal_hook::consts::SIGINT]).map_err(|e| {
+    let mut signals = Signals::new([SIGTERM, signal_hook::consts::SIGINT]).map_err(|e| {
         crate::error::Error::Daemon(format!("Failed to setup signal handlers: {}", e))
     })?;
 

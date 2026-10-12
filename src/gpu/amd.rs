@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
 use crate::gpu::backend::GPUBackend;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "linux")]
 pub struct AmdBackend {
@@ -57,7 +57,7 @@ impl AmdBackend {
         Ok(gpus)
     }
 
-    fn find_hwmon(device_path: &PathBuf) -> Option<PathBuf> {
+    fn find_hwmon(device_path: &Path) -> Option<PathBuf> {
         let hwmon_dir = device_path.join("hwmon");
         if let Ok(entries) = fs::read_dir(&hwmon_dir) {
             for entry in entries.flatten() {
@@ -88,7 +88,7 @@ impl AmdBackend {
         if let Ok(pci_slot) = fs::read_link(device_path) {
             if let Some(slot) = pci_slot.file_name().and_then(|s| s.to_str()) {
                 if let Ok(output) = std::process::Command::new("lspci")
-                    .args(&["-vmm", "-s", slot])
+                    .args(["-vmm", "-s", slot])
                     .output()
                 {
                     if let Ok(text) = String::from_utf8(output.stdout) {
@@ -141,7 +141,7 @@ impl AmdBackend {
         if let Ok(pci_slot) = fs::read_link(device_path) {
             if let Some(slot) = pci_slot.file_name().and_then(|s| s.to_str()) {
                 if let Ok(output) = std::process::Command::new("lspci")
-                    .args(&["-n", "-s", slot])
+                    .args(["-n", "-s", slot])
                     .output()
                 {
                     if let Ok(text) = String::from_utf8(output.stdout) {
