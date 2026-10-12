@@ -73,8 +73,7 @@ fn main() -> Result<()> {
     // lifetime of the process to keep exclusivity.
     let _tui_lock = if !args.headless && !args.tray {
         Some(ensure_single_tui_instance()?)
-    }
-    else {
+    } else {
         None
     };
 
@@ -110,8 +109,14 @@ fn ensure_single_tui_instance() -> Result<std::fs::File> {
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(&lock_path)
-        .map_err(|e| gleam_observer::error::Error::Tui(format!("Failed to open lock file {:?}: {}", lock_path, e)))?;
+        .map_err(|e| {
+            gleam_observer::error::Error::Tui(format!(
+                "Failed to open lock file {:?}: {}",
+                lock_path, e
+            ))
+        })?;
 
     // Try to acquire an exclusive lock; if it fails, report the existing PID.
     if let Err(e) = file.try_lock_exclusive() {

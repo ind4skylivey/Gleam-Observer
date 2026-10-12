@@ -1,14 +1,21 @@
 use gleam_observer::{Config, Result};
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
 
 #[cfg(all(unix, feature = "systray"))]
 use tray_item::{IconSource, TrayItem};
 
+#[cfg(all(unix, feature = "systray"))]
+use std::sync::{Arc, Mutex};
+#[cfg(all(unix, feature = "systray"))]
+use std::thread;
+#[cfg(all(unix, feature = "systray"))]
+use std::time::Duration;
+
+#[cfg(all(unix, feature = "systray"))]
 const MONITORING_INTERVAL_MS: u64 = 1000;
+#[cfg(all(unix, feature = "systray"))]
 const TRAY_UPDATE_INTERVAL_MS: u64 = 200;
 
+#[cfg(all(unix, feature = "systray"))]
 #[derive(Clone)]
 struct TrayState {
     alerts_paused: bool,
@@ -16,6 +23,7 @@ struct TrayState {
     mem_percent: f32,
 }
 
+#[cfg(all(unix, feature = "systray"))]
 impl TrayState {
     fn new() -> Self {
         Self {
@@ -42,7 +50,10 @@ fn main() -> Result<()> {
 
     log::info!("GleamObserver Daemon Starting (Systray Mode)");
 
+    #[cfg(all(unix, feature = "systray"))]
     let config = Config::load().unwrap_or_default();
+    #[cfg(not(all(unix, feature = "systray")))]
+    let _config = Config::load().unwrap_or_default();
 
     #[cfg(all(unix, feature = "systray"))]
     {
@@ -70,6 +81,7 @@ fn main() -> Result<()> {
         ));
     }
 
+    #[allow(unreachable_code)]
     Ok(())
 }
 

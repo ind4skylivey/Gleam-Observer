@@ -5,7 +5,9 @@ pub struct IntelBackend;
 
 impl IntelBackend {
     pub fn detect_all() -> Result<Vec<Self>> {
-        Err(Error::Gpu("Intel GPU monitoring not yet implemented".to_string()))
+        Err(Error::Gpu(
+            "Intel GPU monitoring not yet implemented".to_string(),
+        ))
     }
 }
 

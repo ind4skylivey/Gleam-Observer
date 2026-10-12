@@ -1,6 +1,6 @@
-use super::types::{TrendDirection, TrendType, TrendSeverity, MetricTrend};
+use super::types::{MetricTrend, TrendDirection, TrendSeverity, TrendType};
+use crate::config::{AlertsConfig, TrendConfig};
 use crate::history::{CircularBuffer, DataPoint, MetricsHistory};
-use crate::config::{TrendConfig, AlertsConfig};
 
 pub struct TrendAnalyzer {
     config: TrendConfig,
@@ -12,12 +12,16 @@ impl TrendAnalyzer {
     pub fn new(config: TrendConfig) -> Self {
         Self {
             config,
-            min_data_points: 3,  // Reduced from 5 to show trends faster
+            min_data_points: 3, // Reduced from 5 to show trends faster
             analysis_window: 10,
         }
     }
 
-    pub fn analyze_all(&self, history: &MetricsHistory, thresholds: &AlertsConfig) -> Vec<MetricTrend> {
+    pub fn analyze_all(
+        &self,
+        history: &MetricsHistory,
+        thresholds: &AlertsConfig,
+    ) -> Vec<MetricTrend> {
         if !self.config.enabled {
             return Vec::new();
         }
@@ -25,11 +29,9 @@ impl TrendAnalyzer {
         let mut trends = Vec::new();
 
         // Analyze CPU
-        if let Some(cpu_trend) = self.analyze_metric(
-            &history.cpu_usage,
-            TrendType::Cpu,
-            thresholds.cpu_threshold,
-        ) {
+        if let Some(cpu_trend) =
+            self.analyze_metric(&history.cpu_usage, TrendType::Cpu, thresholds.cpu_threshold)
+        {
             if cpu_trend.confidence >= self.config.min_confidence {
                 trends.push(cpu_trend);
             }
@@ -113,11 +115,7 @@ impl TrendAnalyzer {
 
         // Take last N points for analysis
         let window_size = self.analysis_window.min(data.len());
-        let recent_data: Vec<_> = data.iter()
-            .rev()
-            .take(window_size)
-            .rev()
-            .collect();
+        let recent_data: Vec<_> = data.iter().rev().take(window_size).rev().collect();
 
         // Linear regression: y = mx + b
         let (slope, intercept, r_squared) = self.linear_regression(&recent_data);
@@ -138,10 +136,10 @@ impl TrendAnalyzer {
         };
 
         // Skip if stable or volatile (unless configured to show)
-        if !self.config.show_stable_trends {
-            if matches!(direction, TrendDirection::Stable | TrendDirection::Volatile) {
-                return None;
-            }
+        if !self.config.show_stable_trends
+            && matches!(direction, TrendDirection::Stable | TrendDirection::Volatile)
+        {
+            return None;
         }
 
         // Current value
@@ -157,7 +155,8 @@ impl TrendAnalyzer {
             if slope > 0.0 {
                 let samples_to_threshold = (threshold - current) / slope;
                 let seconds = samples_to_threshold * (self.config.sample_interval_secs as f32);
-                if seconds > 0.0 && seconds < 7200.0 { // Max 2 hours
+                if seconds > 0.0 && seconds < 7200.0 {
+                    // Max 2 hours
                     Some(seconds as u64)
                 } else {
                     None

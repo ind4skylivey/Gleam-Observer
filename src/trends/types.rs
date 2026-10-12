@@ -2,10 +2,10 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TrendDirection {
-    Increasing,   // Values going up
-    Decreasing,   // Values going down
-    Stable,       // No significant change
-    Volatile,     // Erratic/unpredictable
+    Increasing, // Values going up
+    Decreasing, // Values going down
+    Stable,     // No significant change
+    Volatile,   // Erratic/unpredictable
 }
 
 #[derive(Debug, Clone)]
@@ -33,18 +33,18 @@ impl fmt::Display for TrendType {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum TrendSeverity {
-    Info,      // Interesting but not concerning
-    Warning,   // Worth attention
-    Critical,  // Urgent action needed
+    Info,     // Interesting but not concerning
+    Warning,  // Worth attention
+    Critical, // Urgent action needed
 }
 
 #[derive(Debug, Clone)]
 pub struct MetricTrend {
     pub metric: TrendType,
     pub direction: TrendDirection,
-    pub rate_per_minute: f32,        // Change per minute
-    pub confidence: f32,              // 0.0-1.0 (statistical significance)
-    pub predicted_value_5min: f32,    // Forecast 5 minutes ahead
+    pub rate_per_minute: f32,           // Change per minute
+    pub confidence: f32,                // 0.0-1.0 (statistical significance)
+    pub predicted_value_5min: f32,      // Forecast 5 minutes ahead
     pub time_to_threshold: Option<u64>, // Seconds until critical threshold
     pub severity: TrendSeverity,
 }

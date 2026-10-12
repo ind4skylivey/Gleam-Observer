@@ -4,7 +4,7 @@ pub fn send_alert(alert: &Alert) {
     #[cfg(unix)]
     {
         use notify_rust::{Notification, Urgency};
-        
+
         let (summary, urgency) = match alert.level {
             crate::alerts::AlertLevel::Critical => ("Critical Alert", Urgency::Critical),
             crate::alerts::AlertLevel::Warning => ("Warning", Urgency::Normal),
@@ -28,7 +28,8 @@ pub fn send_alert(alert: &Alert) {
 
     #[cfg(not(unix))]
     {
-        log::warn!("Alert: {} - {}", 
+        log::warn!(
+            "Alert: {} - {}",
             match alert.level {
                 crate::alerts::AlertLevel::Critical => "CRITICAL",
                 crate::alerts::AlertLevel::Warning => "WARNING",
@@ -43,9 +44,9 @@ pub fn send_status_update(cpu: f32, mem: f32) {
     #[cfg(unix)]
     {
         use notify_rust::Notification;
-        
+
         let body = format!("CPU: {:.1}% | MEM: {:.1}%", cpu, mem);
-        
+
         let _ = Notification::new()
             .summary("GleamObserver Status")
             .body(&body)

@@ -29,7 +29,7 @@ impl ProcessTree {
     /// Build tree from flat process list
     pub fn build_from_processes(&mut self, processes: Vec<ProcessInfo>) {
         self.nodes.clear();
-        
+
         // First pass: create all nodes
         for proc in processes {
             let ppid = Self::read_ppid(proc.pid).unwrap_or(0);
@@ -65,13 +65,13 @@ impl ProcessTree {
     fn read_ppid(pid: u32) -> Option<u32> {
         let stat_path = format!("/proc/{}/stat", pid);
         let content = fs::read_to_string(stat_path).ok()?;
-        
+
         // Format: pid (comm) state ppid ...
         // Find the closing parenthesis of comm (process name can contain spaces/parens)
         let rparen_idx = content.rfind(')')?;
         let after_comm = &content[rparen_idx + 1..];
         let parts: Vec<&str> = after_comm.split_whitespace().collect();
-        
+
         // ppid is the second field after comm (state is first)
         if parts.len() >= 2 {
             parts[1].parse::<u32>().ok()
@@ -83,18 +83,17 @@ impl ProcessTree {
     /// Generate render order with depth information
     pub fn calculate_render_order(&mut self, collapsed_pids: &HashSet<u32>) {
         self.render_order.clear();
-        
+
         // Find root processes (orphaned or direct children of init)
-        let mut roots: Vec<u32> = self.nodes
+        let mut roots: Vec<u32> = self
+            .nodes
             .iter()
             .filter(|(_pid, node)| {
-                node.ppid == 0 || 
-                node.ppid == 1 || 
-                !self.nodes.contains_key(&node.ppid)
+                node.ppid == 0 || node.ppid == 1 || !self.nodes.contains_key(&node.ppid)
             })
             .map(|(pid, _)| *pid)
             .collect();
-        
+
         roots.sort();
 
         for root_pid in roots {
@@ -120,9 +119,9 @@ impl ProcessTree {
 
     /// Get processes in render order (respects tree hierarchy and collapsed nodes)
     pub fn iter_visible(&self) -> impl Iterator<Item = (&ProcessNode, usize)> + '_ {
-        self.render_order.iter().filter_map(|(pid, depth)| {
-            self.nodes.get(pid).map(|node| (node, *depth))
-        })
+        self.render_order
+            .iter()
+            .filter_map(|(pid, depth)| self.nodes.get(pid).map(|node| (node, *depth)))
     }
 
     /// Get a specific node
@@ -132,7 +131,10 @@ impl ProcessTree {
 
     /// Check if process has children
     pub fn has_children(&self, pid: u32) -> bool {
-        self.nodes.get(&pid).map(|n| !n.children.is_empty()).unwrap_or(false)
+        self.nodes
+            .get(&pid)
+            .map(|n| !n.children.is_empty())
+            .unwrap_or(false)
     }
 
     /// Get total number of processes in tree
@@ -186,6 +188,7 @@ mod tests {
         let processes = vec![
             ProcessInfo {
                 pid: 1,
+                tgid: 1,
                 name: "init".to_string(),
                 cmd: "init".to_string(),
                 cpu_usage: 0.0,
@@ -194,6 +197,7 @@ mod tests {
             },
             ProcessInfo {
                 pid: 100,
+                tgid: 100,
                 name: "parent".to_string(),
                 cmd: "parent".to_string(),
                 cpu_usage: 10.0,
@@ -202,6 +206,7 @@ mod tests {
             },
             ProcessInfo {
                 pid: 200,
+                tgid: 200,
                 name: "child".to_string(),
                 cmd: "child".to_string(),
                 cpu_usage: 5.0,

@@ -16,7 +16,8 @@ impl NetworkMetrics {
     }
 
     pub fn list(&self) -> Vec<NetworkInfo> {
-        self.networks.iter()
+        self.networks
+            .iter()
             .map(|(name, network)| NetworkInfo {
                 name: name.to_string(),
                 received: network.received(),
