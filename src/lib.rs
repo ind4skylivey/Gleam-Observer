@@ -1,15 +1,15 @@
+pub mod alerts;
 pub mod app;
 pub mod config;
+pub mod daemon;
 pub mod error;
-pub mod metrics;
 pub mod gpu;
-pub mod process;
-pub mod tui;
-pub mod alerts;
 pub mod history;
 pub mod logger;
+pub mod metrics;
+pub mod process;
 pub mod trends;
-pub mod daemon;
+pub mod tui;
 
 pub use app::App;
 pub use config::Config;

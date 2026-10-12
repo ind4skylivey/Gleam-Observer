@@ -1,6 +1,6 @@
 use crate::config::AlertsConfig;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AlertLevel {
@@ -30,12 +30,18 @@ pub struct Alert {
 }
 
 impl Alert {
-    fn new(alert_type: AlertType, level: AlertLevel, value: f32, threshold: f32, message: String) -> Self {
+    fn new(
+        alert_type: AlertType,
+        level: AlertLevel,
+        value: f32,
+        threshold: f32,
+        message: String,
+    ) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        
+
         Self {
             alert_type,
             level,
@@ -90,7 +96,8 @@ impl AlertDetector {
         true
     }
 
-    pub fn check_alerts(&mut self, 
+    pub fn check_alerts(
+        &mut self,
         cpu_usage: f32,
         mem_usage: f32,
         swap_usage: f32,
@@ -118,7 +125,10 @@ impl AlertDetector {
                 level,
                 cpu_usage,
                 self.config.cpu_threshold,
-                format!("CPU usage at {:.1}% (threshold: {:.1}%)", cpu_usage, self.config.cpu_threshold),
+                format!(
+                    "CPU usage at {:.1}% (threshold: {:.1}%)",
+                    cpu_usage, self.config.cpu_threshold
+                ),
             );
             new_alerts.push(alert);
         }
@@ -136,7 +146,10 @@ impl AlertDetector {
                 level,
                 mem_usage,
                 self.config.memory_threshold,
-                format!("Memory usage at {:.1}% (threshold: {:.1}%)", mem_usage, self.config.memory_threshold),
+                format!(
+                    "Memory usage at {:.1}% (threshold: {:.1}%)",
+                    mem_usage, self.config.memory_threshold
+                ),
             );
             new_alerts.push(alert);
         }
@@ -148,62 +161,71 @@ impl AlertDetector {
                 AlertLevel::Warning,
                 swap_usage,
                 self.config.swap_threshold,
-                format!("SWAP usage at {:.1}% (threshold: {:.1}%)", swap_usage, self.config.swap_threshold),
+                format!(
+                    "SWAP usage at {:.1}% (threshold: {:.1}%)",
+                    swap_usage, self.config.swap_threshold
+                ),
             );
             new_alerts.push(alert);
         }
 
         // Check GPU
         for (i, gpu_info) in gpu_infos.iter().enumerate() {
-                // GPU Temperature
-                if let Some(temp) = gpu_info.temperature {
-                    if temp > self.config.gpu_temp_threshold {
-                        let level = if temp > 85.0 {
-                            AlertLevel::Critical
-                        } else {
-                            AlertLevel::Warning
-                        };
+            // GPU Temperature
+            if let Some(temp) = gpu_info.temperature {
+                if temp > self.config.gpu_temp_threshold {
+                    let level = if temp > 85.0 {
+                        AlertLevel::Critical
+                    } else {
+                        AlertLevel::Warning
+                    };
 
-                        let alert = Alert::new(
-                            AlertType::GpuTemperature { gpu_id: i },
-                            level,
-                            temp,
-                            self.config.gpu_temp_threshold,
-                            format!("GPU {} temperature at {:.1}°C (threshold: {:.1}°C)", 
-                                i, temp, self.config.gpu_temp_threshold),
-                        );
-                        new_alerts.push(alert);
-                    }
+                    let alert = Alert::new(
+                        AlertType::GpuTemperature { gpu_id: i },
+                        level,
+                        temp,
+                        self.config.gpu_temp_threshold,
+                        format!(
+                            "GPU {} temperature at {:.1}°C (threshold: {:.1}°C)",
+                            i, temp, self.config.gpu_temp_threshold
+                        ),
+                    );
+                    new_alerts.push(alert);
                 }
+            }
 
-                // GPU Utilization
-                if let Some(util) = gpu_info.utilization {
-                    if util > self.config.gpu_util_threshold {
-                        let alert = Alert::new(
-                            AlertType::GpuUtilization { gpu_id: i },
-                            AlertLevel::Info,
-                            util,
-                            self.config.gpu_util_threshold,
-                            format!("GPU {} utilization at {:.1}% (threshold: {:.1}%)", 
-                                i, util, self.config.gpu_util_threshold),
-                        );
-                        new_alerts.push(alert);
-                    }
+            // GPU Utilization
+            if let Some(util) = gpu_info.utilization {
+                if util > self.config.gpu_util_threshold {
+                    let alert = Alert::new(
+                        AlertType::GpuUtilization { gpu_id: i },
+                        AlertLevel::Info,
+                        util,
+                        self.config.gpu_util_threshold,
+                        format!(
+                            "GPU {} utilization at {:.1}% (threshold: {:.1}%)",
+                            i, util, self.config.gpu_util_threshold
+                        ),
+                    );
+                    new_alerts.push(alert);
                 }
+            }
 
-                // GPU Memory
-                if let Some(mem_percent) = gpu_info.memory_usage_percent() {
-                    if mem_percent > self.config.gpu_mem_threshold {
-                        let alert = Alert::new(
-                            AlertType::GpuMemory { gpu_id: i },
-                            AlertLevel::Warning,
-                            mem_percent,
-                            self.config.gpu_mem_threshold,
-                            format!("GPU {} memory at {:.1}% (threshold: {:.1}%)", 
-                                i, mem_percent, self.config.gpu_mem_threshold),
-                        );
-                        new_alerts.push(alert);
-                    }
+            // GPU Memory
+            if let Some(mem_percent) = gpu_info.memory_usage_percent() {
+                if mem_percent > self.config.gpu_mem_threshold {
+                    let alert = Alert::new(
+                        AlertType::GpuMemory { gpu_id: i },
+                        AlertLevel::Warning,
+                        mem_percent,
+                        self.config.gpu_mem_threshold,
+                        format!(
+                            "GPU {} memory at {:.1}% (threshold: {:.1}%)",
+                            i, mem_percent, self.config.gpu_mem_threshold
+                        ),
+                    );
+                    new_alerts.push(alert);
+                }
             }
         }
 
@@ -220,13 +242,15 @@ impl AlertDetector {
     }
 
     pub fn critical_count(&self) -> usize {
-        self.active_alerts.iter()
+        self.active_alerts
+            .iter()
             .filter(|a| a.level == AlertLevel::Critical)
             .count()
     }
 
     pub fn warning_count(&self) -> usize {
-        self.active_alerts.iter()
+        self.active_alerts
+            .iter()
             .filter(|a| a.level == AlertLevel::Warning)
             .count()
     }

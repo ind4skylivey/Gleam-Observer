@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
 use crate::gpu::backend::GPUBackend;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "linux")]
 pub struct AmdBackend {
@@ -22,16 +22,14 @@ impl AmdBackend {
 
         for entry in cards.flatten() {
             let path = entry.path();
-            let name = path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
-            
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
             // Skip display connectors (card1-DP-1, card1-HDMI-A-1, etc.)
             // Only process main cards (card0, card1, etc.)
             if !name.starts_with("card") || name.contains('-') {
                 continue;
             }
-            
+
             let device_path = path.join("device");
 
             if !device_path.exists() {
@@ -59,7 +57,7 @@ impl AmdBackend {
         Ok(gpus)
     }
 
-    fn find_hwmon(device_path: &PathBuf) -> Option<PathBuf> {
+    fn find_hwmon(device_path: &Path) -> Option<PathBuf> {
         let hwmon_dir = device_path.join("hwmon");
         if let Ok(entries) = fs::read_dir(&hwmon_dir) {
             for entry in entries.flatten() {
@@ -82,22 +80,22 @@ impl AmdBackend {
                 return trimmed.to_string();
             }
         }
-        
+
         // Get device ID for known GPU mapping
         let device_id = Self::read_device_id(device_path);
-        
+
         // Fallback to lspci with machine-readable format
         if let Ok(pci_slot) = fs::read_link(device_path) {
             if let Some(slot) = pci_slot.file_name().and_then(|s| s.to_str()) {
                 if let Ok(output) = std::process::Command::new("lspci")
-                    .args(&["-vmm", "-s", slot])
+                    .args(["-vmm", "-s", slot])
                     .output()
                 {
                     if let Ok(text) = String::from_utf8(output.stdout) {
                         let mut device_name = None;
                         let mut sdevice_name = None;
                         let mut svendor = None;
-                        
+
                         for line in text.lines() {
                             if line.starts_with("Device:") {
                                 device_name = Some(line.trim_start_matches("Device:").trim());
@@ -107,21 +105,21 @@ impl AmdBackend {
                                 svendor = Some(line.trim_start_matches("SVendor:").trim());
                             }
                         }
-                        
+
                         // Apply known GPU mappings for proper naming
                         if let (Some(dev_id), Some(vendor)) = (&device_id, svendor) {
                             if let Some(proper_name) = Self::get_known_gpu_name(dev_id, vendor) {
                                 return proper_name;
                             }
                         }
-                        
+
                         // Prefer subsystem device name (more specific)
                         if let Some(name) = sdevice_name {
                             if !name.is_empty() {
                                 return name.to_string();
                             }
                         }
-                        
+
                         // Fallback to device name, extract from brackets
                         if let Some(name) = device_name {
                             if let Some(bracketed) = name.split('[').nth(1) {
@@ -135,15 +133,15 @@ impl AmdBackend {
                 }
             }
         }
-        
+
         "Unknown AMD GPU".to_string()
     }
-    
+
     fn read_device_id(device_path: &PathBuf) -> Option<String> {
         if let Ok(pci_slot) = fs::read_link(device_path) {
             if let Some(slot) = pci_slot.file_name().and_then(|s| s.to_str()) {
                 if let Ok(output) = std::process::Command::new("lspci")
-                    .args(&["-n", "-s", slot])
+                    .args(["-n", "-s", slot])
                     .output()
                 {
                     if let Ok(text) = String::from_utf8(output.stdout) {
@@ -159,7 +157,7 @@ impl AmdBackend {
         }
         None
     }
-    
+
     fn get_known_gpu_name(device_id: &str, vendor: &str) -> Option<String> {
         // Sapphire GPUs
         if vendor.contains("Sapphire") {
@@ -174,7 +172,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         // ASUS GPUs
         if vendor.contains("ASUSTeK") || vendor.contains("ASUS") {
             match device_id {
@@ -188,7 +186,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         // MSI GPUs
         if vendor.contains("Micro-Star") || vendor.contains("MSI") {
             match device_id {
@@ -202,7 +200,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         // Gigabyte GPUs
         if vendor.contains("Gigabyte") {
             match device_id {
@@ -216,7 +214,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         // XFX GPUs
         if vendor.contains("XFX") || vendor.contains("Pine Technology") {
             match device_id {
@@ -230,7 +228,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         // PowerColor GPUs
         if vendor.contains("PowerColor") || vendor.contains("TUL Corporation") {
             match device_id {
@@ -244,7 +242,7 @@ impl AmdBackend {
                 _ => {}
             }
         }
-        
+
         None
     }
 
@@ -308,21 +306,21 @@ impl GPUBackend for AmdBackend {
     }
 
     fn memory_clock(&self) -> Option<u32> {
-        self.read_sysfs_value("pp_dpm_mclk")
-            .and_then(|content| {
-                content.lines()
-                    .find(|line| line.contains('*'))
-                    .and_then(|line| {
-                        line.split(':')
-                            .nth(1)?
-                            .trim()
-                            .split("Mhz")
-                            .next()?
-                            .trim()
-                            .parse::<u32>()
-                            .ok()
-                    })
-            })
+        self.read_sysfs_value("pp_dpm_mclk").and_then(|content| {
+            content
+                .lines()
+                .find(|line| line.contains('*'))
+                .and_then(|line| {
+                    line.split(':')
+                        .nth(1)?
+                        .trim()
+                        .split("Mhz")
+                        .next()?
+                        .trim()
+                        .parse::<u32>()
+                        .ok()
+                })
+        })
     }
 
     fn fan_speed(&self) -> Option<u32> {
@@ -341,22 +339,48 @@ pub struct AmdBackend;
 #[cfg(not(target_os = "linux"))]
 impl AmdBackend {
     pub fn detect_all() -> Result<Vec<Self>> {
-        Err(Error::Gpu("AMD GPU monitoring not supported on this platform".to_string()))
+        Err(Error::Gpu(
+            "AMD GPU monitoring not supported on this platform".to_string(),
+        ))
     }
 }
 
 #[cfg(not(target_os = "linux"))]
 impl GPUBackend for AmdBackend {
-    fn name(&self) -> String { "Unsupported".to_string() }
-    fn vendor(&self) -> String { "AMD".to_string() }
-    fn temperature(&self) -> Option<f32> { None }
-    fn utilization(&self) -> Option<f32> { None }
-    fn memory_used(&self) -> Option<u64> { None }
-    fn memory_total(&self) -> Option<u64> { None }
-    fn power_draw(&self) -> Option<f32> { None }
-    fn power_limit(&self) -> Option<f32> { None }
-    fn clock_speed(&self) -> Option<u32> { None }
-    fn memory_clock(&self) -> Option<u32> { None }
-    fn fan_speed(&self) -> Option<u32> { None }
-    fn processes(&self) -> Vec<crate::gpu::backend::GPUProcess> { Vec::new() }
+    fn name(&self) -> String {
+        "Unsupported".to_string()
+    }
+    fn vendor(&self) -> String {
+        "AMD".to_string()
+    }
+    fn temperature(&self) -> Option<f32> {
+        None
+    }
+    fn utilization(&self) -> Option<f32> {
+        None
+    }
+    fn memory_used(&self) -> Option<u64> {
+        None
+    }
+    fn memory_total(&self) -> Option<u64> {
+        None
+    }
+    fn power_draw(&self) -> Option<f32> {
+        None
+    }
+    fn power_limit(&self) -> Option<f32> {
+        None
+    }
+    fn clock_speed(&self) -> Option<u32> {
+        None
+    }
+    fn memory_clock(&self) -> Option<u32> {
+        None
+    }
+    fn fan_speed(&self) -> Option<u32> {
+        None
+    }
+    fn processes(&self) -> Vec<crate::gpu::backend::GPUProcess> {
+        Vec::new()
+    }
 }

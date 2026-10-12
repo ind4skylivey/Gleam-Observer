@@ -4,14 +4,14 @@ mod signals;
 pub use notifications::{send_alert, send_status_update};
 pub use signals::setup_signal_handlers;
 
+use crate::alerts::{AlertDetector, Notifier};
 use crate::config::Config;
 use crate::error::Result;
-use crate::metrics::SystemMetrics;
 use crate::gpu::GPUManager;
-use crate::alerts::{AlertDetector, Notifier};
 use crate::history::MetricsHistory;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use crate::metrics::SystemMetrics;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 static STOP_FLAG: AtomicBool = AtomicBool::new(false);
 
@@ -32,7 +32,10 @@ impl DaemonContext {
         let gpu = {
             let manager = GPUManager::new();
             if manager.has_gpus() {
-                log::info!("GPU monitoring enabled: {} GPU(s) detected", manager.gpu_count());
+                log::info!(
+                    "GPU monitoring enabled: {} GPU(s) detected",
+                    manager.gpu_count()
+                );
                 Some(manager)
             } else {
                 log::warn!("GPU monitoring enabled but no GPUs detected");
@@ -48,7 +51,7 @@ impl DaemonContext {
         };
         let notifier = Notifier::new(config.alerts.notifications_enabled);
         let history = MetricsHistory::new(config.refresh.history_samples, gpu_count);
-        
+
         Ok(Self {
             config,
             metrics: SystemMetrics::new(),
@@ -64,57 +67,67 @@ impl DaemonContext {
 
     fn monitoring_loop(&mut self) -> Result<()> {
         let refresh_interval = Duration::from_millis(self.config.refresh.interval_ms);
-        
-        log::info!("Starting daemon monitoring loop (interval: {}ms)", self.config.refresh.interval_ms);
-        
+
+        log::info!(
+            "Starting daemon monitoring loop (interval: {}ms)",
+            self.config.refresh.interval_ms
+        );
+
         loop {
             let loop_start = std::time::Instant::now();
-            
+
             if should_stop() {
                 log::info!("Daemon stop signal received");
                 break;
             }
-            
+
             self.update_metrics();
             self.process_alerts();
             self.sleep_until_next_cycle(loop_start, refresh_interval);
         }
-        
+
         Ok(())
     }
-    
+
     fn update_metrics(&mut self) {
         self.metrics.refresh();
-        
+
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        
+
         self.cpu_percent = self.metrics.global_cpu_usage();
         self.mem_percent = self.metrics.memory_usage_percent();
         let swap_usage = self.metrics.swap_usage_percent();
-        
+
         let gpu_info = self.get_gpu_info();
-        
-        self.history.update(timestamp, self.cpu_percent, self.mem_percent, swap_usage, &gpu_info);
+
+        self.history.update(
+            timestamp,
+            self.cpu_percent,
+            self.mem_percent,
+            swap_usage,
+            &gpu_info,
+        );
     }
-    
+
     fn get_gpu_info(&self) -> Vec<crate::gpu::GPUInfo> {
-        self.gpu.as_ref()
+        self.gpu
+            .as_ref()
             .map(|manager| manager.get_info())
             .unwrap_or_default()
     }
-    
+
     fn process_alerts(&mut self) {
         if !self.should_process_alerts() {
             return;
         }
-        
+
         let swap_usage = self.metrics.swap_usage_percent();
         let swap_total = self.metrics.swap_total();
         let gpu_info = self.get_gpu_info();
-        
+
         let alerts = self.alert_detector.check_alerts(
             self.cpu_percent,
             self.mem_percent,
@@ -122,17 +135,17 @@ impl DaemonContext {
             swap_total,
             &gpu_info,
         );
-        
+
         for alert in alerts {
             log::warn!("Alert triggered: {:?} - {}", alert.level, alert.message);
             self.notifier.send_alert(&alert);
         }
     }
-    
+
     fn should_process_alerts(&self) -> bool {
         !self.alerts_paused && self.config.alerts.enabled
     }
-    
+
     fn sleep_until_next_cycle(&self, loop_start: std::time::Instant, refresh_interval: Duration) {
         let elapsed = loop_start.elapsed();
         if elapsed < refresh_interval {
@@ -142,11 +155,11 @@ impl DaemonContext {
 
     pub fn start(config: Config) -> Result<()> {
         log::info!("Initializing GleamObserver daemon");
-        
+
         signals::setup_signal_handlers()?;
-        
+
         let mut ctx = Self::new(config)?;
-        
+
         ctx.monitoring_loop()
     }
 }
@@ -161,16 +174,16 @@ pub fn set_stop_flag() {
 
 #[cfg(unix)]
 pub fn daemonize() -> Result<()> {
-    use nix::unistd::{fork, ForkResult, setsid};
+    use nix::unistd::{fork, setsid, ForkResult};
     use std::process::exit;
-    
+
     match unsafe { fork() } {
         Ok(ForkResult::Parent { .. }) => {
             exit(0);
         }
         Ok(ForkResult::Child) => {
             setsid().map_err(|e| crate::error::Error::Daemon(format!("setsid failed: {}", e)))?;
-            
+
             match unsafe { fork() } {
                 Ok(ForkResult::Parent { .. }) => {
                     exit(0);
@@ -178,7 +191,7 @@ pub fn daemonize() -> Result<()> {
                 Ok(ForkResult::Child) => {
                     std::env::set_current_dir("/")
                         .map_err(|e| crate::error::Error::Daemon(format!("chdir failed: {}", e)))?;
-                    
+
                     Ok(())
                 }
                 Err(e) => Err(crate::error::Error::Daemon(format!("fork failed: {}", e))),
@@ -190,5 +203,7 @@ pub fn daemonize() -> Result<()> {
 
 #[cfg(not(unix))]
 pub fn daemonize() -> Result<()> {
-    Err(crate::error::Error::Daemon("Daemonization not supported on this platform".to_string()))
+    Err(crate::error::Error::Daemon(
+        "Daemonization not supported on this platform".to_string(),
+    ))
 }

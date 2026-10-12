@@ -1,8 +1,8 @@
+pub mod dialogs;
 pub mod events;
 pub mod theme;
 pub mod ui;
 pub mod widgets;
-pub mod dialogs;
 
 use crate::app::App;
 use crate::error::Result;
@@ -19,15 +19,15 @@ pub fn run(mut app: App) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
-    
+
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    
+
     let tick_rate = Duration::from_millis(app.config.refresh.interval_ms);
     let event_handler = events::EventHandler::new(tick_rate);
-    
+
     let result = run_app(&mut terminal, &mut app, &event_handler);
-    
+
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -35,7 +35,7 @@ pub fn run(mut app: App) -> Result<()> {
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
-    
+
     result
 }
 
@@ -46,11 +46,11 @@ fn run_app<B: ratatui::backend::Backend>(
 ) -> Result<()> {
     loop {
         terminal.draw(|f| ui::draw(f, app))?;
-        
+
         match event_handler.next()? {
             events::AppEvent::Key(key) => {
                 use crate::app::DialogMode;
-                
+
                 // Handle filter input mode first
                 if app.filter_mode {
                     match key.code {
@@ -73,7 +73,7 @@ fn run_app<B: ratatui::backend::Backend>(
                     }
                     continue;
                 }
-                
+
                 // Handle dialog input next
                 match app.dialog_mode {
                     DialogMode::ConfirmKill | DialogMode::ConfirmTerminate => {
@@ -96,7 +96,7 @@ fn run_app<B: ratatui::backend::Backend>(
                     }
                     DialogMode::None => {}
                 }
-                
+
                 // Regular key handling
                 if events::should_quit(&key) {
                     app.quit();
@@ -149,11 +149,11 @@ fn run_app<B: ratatui::backend::Backend>(
                 // Mouse events - redraw but don't update metrics
             }
         }
-        
+
         if !app.running {
             break;
         }
     }
-    
+
     Ok(())
 }
