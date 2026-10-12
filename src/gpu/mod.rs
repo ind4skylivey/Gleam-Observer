@@ -12,4 +12,4 @@ pub mod intel;
 #[cfg(all(target_os = "macos", feature = "apple-gpu"))]
 pub mod apple;
 
-pub use backend::{GPUBackend, GPUManager, GPUInfo};
+pub use backend::{GPUBackend, GPUInfo, GPUManager};

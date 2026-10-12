@@ -1,4 +1,4 @@
-use sysinfo::{Disks};
+use sysinfo::Disks;
 
 pub struct DiskMetrics {
     disks: Disks,
@@ -16,7 +16,8 @@ impl DiskMetrics {
     }
 
     pub fn list(&self) -> Vec<DiskInfo> {
-        self.disks.iter()
+        self.disks
+            .iter()
             .map(|disk| DiskInfo {
                 name: disk.name().to_string_lossy().to_string(),
                 mount_point: disk.mount_point().to_string_lossy().to_string(),

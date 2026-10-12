@@ -26,6 +26,7 @@ pub struct GPUManager {
 
 impl GPUManager {
     pub fn new() -> Self {
+        #[allow(unused_mut)]
         let mut backends: Vec<Box<dyn GPUBackend>> = Vec::new();
 
         #[cfg(feature = "nvidia")]
@@ -74,15 +75,17 @@ impl GPUManager {
     }
 
     pub fn get_info(&self) -> Vec<GPUInfo> {
-        self.backends.iter()
+        self.backends
+            .iter()
             .enumerate()
             .map(|(i, gpu)| {
                 let power_draw = gpu.power_draw();
                 let power_limit = gpu.power_limit();
                 let utilization = gpu.utilization();
-                
+
                 // Calculate power efficiency (utilization per watt)
-                let power_efficiency = if let (Some(util), Some(power)) = (utilization, power_draw) {
+                let power_efficiency = if let (Some(util), Some(power)) = (utilization, power_draw)
+                {
                     if power > 0.0 {
                         Some(util / power)
                     } else {
@@ -91,7 +94,7 @@ impl GPUManager {
                 } else {
                     None
                 };
-                
+
                 GPUInfo {
                     id: i,
                     name: gpu.name(),
@@ -140,9 +143,7 @@ pub struct GPUInfo {
 impl GPUInfo {
     pub fn memory_usage_percent(&self) -> Option<f32> {
         match (self.memory_used, self.memory_total) {
-            (Some(used), Some(total)) if total > 0 => {
-                Some((used as f32 / total as f32) * 100.0)
-            }
+            (Some(used), Some(total)) if total > 0 => Some((used as f32 / total as f32) * 100.0),
             _ => None,
         }
     }

@@ -1,6 +1,6 @@
-use sysinfo::{System, Process, Pid, ProcessesToUpdate};
 use std::collections::HashMap;
 use std::fs;
+use sysinfo::{Pid, Process, ProcessesToUpdate, System};
 
 pub struct SystemMetrics {
     system: System,
@@ -30,7 +30,9 @@ impl SystemMetrics {
     }
 
     pub fn cpu_usage(&self) -> Vec<f32> {
-        self.system.cpus().iter()
+        self.system
+            .cpus()
+            .iter()
             .map(|cpu| cpu.cpu_usage())
             .collect()
     }
@@ -40,7 +42,9 @@ impl SystemMetrics {
     }
 
     pub fn cpu_info(&self) -> Vec<CpuInfo> {
-        self.system.cpus().iter()
+        self.system
+            .cpus()
+            .iter()
             .enumerate()
             .map(|(i, cpu)| CpuInfo {
                 id: i,
@@ -97,18 +101,18 @@ impl SystemMetrics {
 
     pub fn top_processes_by_cpu(&self, limit: usize) -> Vec<ProcessInfo> {
         let mut processes = self.grouped_processes();
-        processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap());
+        processes.sort_by(|a, b| b.cpu_usage.total_cmp(&a.cpu_usage));
         processes.truncate(limit);
         processes
     }
 
     pub fn top_processes_by_memory(&self, limit: usize) -> Vec<ProcessInfo> {
         let mut processes = self.grouped_processes();
-        processes.sort_by(|a, b| b.memory_kb.cmp(&a.memory_kb));
+        processes.sort_by_key(|a| std::cmp::Reverse(a.memory_kb));
         processes.truncate(limit);
         processes
     }
-    
+
     /// Get all processes as a flat list
     pub fn all_processes(&self) -> Vec<ProcessInfo> {
         self.grouped_processes()
@@ -116,7 +120,8 @@ impl SystemMetrics {
 
     /// Return processes grouped by TGID (thread group), aggregating CPU and memory.
     fn grouped_processes(&self) -> Vec<ProcessInfo> {
-        let mut grouped: std::collections::HashMap<u32, ProcessInfo> = std::collections::HashMap::new();
+        let mut grouped: std::collections::HashMap<u32, ProcessInfo> =
+            std::collections::HashMap::new();
 
         for (pid, process) in self.system.processes() {
             let cmd_vec: Vec<String> = process
@@ -176,9 +181,9 @@ pub struct ProcessInfo {
     pub pid: u32,
     pub tgid: u32,
     pub name: String,
-    pub cmd: String,  // Full command line
+    pub cmd: String, // Full command line
     pub cpu_usage: f32,
-    pub memory_kb: u64,  // Memory in KB for consistency
+    pub memory_kb: u64, // Memory in KB for consistency
     pub user: String,
 }
 

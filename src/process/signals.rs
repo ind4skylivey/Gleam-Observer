@@ -1,9 +1,9 @@
+use anyhow::{anyhow, Result};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
 use std::path::Path;
 use std::time::Duration;
 use tokio::time::sleep;
-use anyhow::{Result, anyhow};
 
 /// Smart kill: Try SIGTERM first, wait, then escalate to SIGKILL if needed
 pub async fn smart_kill(pid: u32) -> Result<String> {
@@ -20,19 +20,25 @@ pub async fn smart_kill(pid: u32) -> Result<String> {
 
     // Step 3: Check if process still exists
     if process_exists(pid) {
-        log::warn!("Process {} didn't respond to SIGTERM, escalating to SIGKILL", pid);
+        log::warn!(
+            "Process {} didn't respond to SIGTERM, escalating to SIGKILL",
+            pid
+        );
         send_signal_to_process(pid, Signal::SIGKILL)?;
-        
+
         // Give it a moment
         sleep(Duration::from_millis(500)).await;
-        
+
         if process_exists(pid) {
-            return Ok(format!("Sent SIGKILL to process {} (escalated from SIGTERM)", pid));
+            Ok(format!(
+                "Sent SIGKILL to process {} (escalated from SIGTERM)",
+                pid
+            ))
         } else {
-            return Ok(format!("Process {} terminated (escalated to SIGKILL)", pid));
+            Ok(format!("Process {} terminated (escalated to SIGKILL)", pid))
         }
     } else {
-        return Ok(format!("Process {} terminated gracefully (SIGTERM)", pid));
+        Ok(format!("Process {} terminated gracefully (SIGTERM)", pid))
     }
 }
 
@@ -44,7 +50,7 @@ pub fn force_kill(pid: u32) -> Result<String> {
 
     log::info!("Sending SIGKILL to process {}", pid);
     send_signal_to_process(pid, Signal::SIGKILL)?;
-    
+
     Ok(format!("Sent SIGKILL to process {}", pid))
 }
 
@@ -56,7 +62,7 @@ pub fn terminate(pid: u32) -> Result<String> {
 
     log::info!("Sending SIGTERM to process {}", pid);
     send_signal_to_process(pid, Signal::SIGTERM)?;
-    
+
     Ok(format!("Sent SIGTERM to process {}", pid))
 }
 
@@ -100,11 +106,11 @@ mod tests {
 
     #[test]
     fn test_process_exists() {
-        // PID 1 (init/systemd) should always exist
-        assert!(process_exists(1));
-        
-        // PID 99999 probably doesn't exist
-        assert!(!process_exists(99999));
+        // The current process must always exist
+        assert!(process_exists(std::process::id()));
+
+        // A very large PID should not exist
+        assert!(!process_exists(u32::MAX - 1));
     }
 
     #[test]

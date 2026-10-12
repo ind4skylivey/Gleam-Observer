@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::fs;
 use crate::error::{Error, Result};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -63,24 +63,60 @@ pub struct TrendConfig {
     pub show_stable_trends: bool,
 }
 
-fn default_interval_ms() -> u64 { 1000 }
-fn default_history_samples() -> usize { 60 }
-fn default_enabled() -> bool { true }
-fn default_notifications_enabled() -> bool { true }
-fn default_notification_cooldown() -> u64 { 60 } // 1 minute cooldown
-fn default_cpu_threshold() -> f32 { 85.0 }
-fn default_memory_threshold() -> f32 { 90.0 }
-fn default_swap_threshold() -> f32 { 80.0 }
-fn default_gpu_temp_threshold() -> f32 { 75.0 }
-fn default_gpu_util_threshold() -> f32 { 95.0 }
-fn default_gpu_mem_threshold() -> f32 { 90.0 }
-fn default_theme() -> String { "dark".to_string() }
-fn default_show_processes() -> bool { true }
-fn default_process_count() -> usize { 10 }
-fn default_trend_enabled() -> bool { true }
-fn default_sample_interval() -> u64 { 1 }
-fn default_min_confidence() -> f32 { 0.7 }
-fn default_show_stable() -> bool { true }  // Show all trends including stable ones for testing
+fn default_interval_ms() -> u64 {
+    1000
+}
+fn default_history_samples() -> usize {
+    60
+}
+fn default_enabled() -> bool {
+    true
+}
+fn default_notifications_enabled() -> bool {
+    true
+}
+fn default_notification_cooldown() -> u64 {
+    60
+} // 1 minute cooldown
+fn default_cpu_threshold() -> f32 {
+    85.0
+}
+fn default_memory_threshold() -> f32 {
+    90.0
+}
+fn default_swap_threshold() -> f32 {
+    80.0
+}
+fn default_gpu_temp_threshold() -> f32 {
+    75.0
+}
+fn default_gpu_util_threshold() -> f32 {
+    95.0
+}
+fn default_gpu_mem_threshold() -> f32 {
+    90.0
+}
+fn default_theme() -> String {
+    "dark".to_string()
+}
+fn default_show_processes() -> bool {
+    true
+}
+fn default_process_count() -> usize {
+    10
+}
+fn default_trend_enabled() -> bool {
+    true
+}
+fn default_sample_interval() -> u64 {
+    1
+}
+fn default_min_confidence() -> f32 {
+    0.7
+}
+fn default_show_stable() -> bool {
+    true
+} // Show all trends including stable ones for testing
 
 impl Default for Config {
     fn default() -> Self {
@@ -118,7 +154,7 @@ impl Default for Config {
 impl Config {
     pub fn load() -> Result<Self> {
         let config_path = Self::config_path()?;
-        
+
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)?;
             let config: Config = toml::from_str(&content)
@@ -131,14 +167,14 @@ impl Config {
 
     pub fn save(&self) -> Result<()> {
         let config_path = Self::config_path()?;
-        
+
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         let content = toml::to_string_pretty(self)
             .map_err(|e| Error::Config(format!("Failed to serialize config: {}", e)))?;
-        
+
         fs::write(&config_path, content)?;
         Ok(())
     }
@@ -146,7 +182,7 @@ impl Config {
     fn config_path() -> Result<PathBuf> {
         let home = std::env::var("HOME")
             .map_err(|_| Error::Config("HOME environment variable not set".to_string()))?;
-        
+
         Ok(PathBuf::from(home).join(".config/gleam-observer/config.toml"))
     }
 }

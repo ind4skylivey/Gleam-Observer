@@ -1,14 +1,14 @@
+use crate::alerts::{Alert, AlertDetector, Notifier};
 use crate::config::Config;
 use crate::error::Result;
-use crate::metrics::SystemMetrics;
 use crate::gpu::GPUManager;
-use crate::alerts::{AlertDetector, Alert, Notifier};
 use crate::history::MetricsHistory;
-use crate::trends::{TrendAnalyzer, MetricTrend};
-use crate::process::{ProcessTree, smart_kill, force_kill};
 use crate::metrics::system::ProcessInfo as SystemProcessInfo;
-use std::time::{SystemTime, UNIX_EPOCH};
+use crate::metrics::SystemMetrics;
+use crate::process::{force_kill, smart_kill, ProcessTree};
+use crate::trends::{MetricTrend, TrendAnalyzer};
 use std::collections::HashSet;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ViewMode {
@@ -51,17 +51,17 @@ pub struct App {
     pub selected_process_index: usize,
     pub dialog_mode: DialogMode,
     pub playback_index: Option<usize>,
-    
+
     // Tree view support
     pub tree_mode: bool,
     pub process_tree: ProcessTree,
     pub collapsed_pids: HashSet<u32>,
-    
+
     // Filter support
     pub filter_mode: bool,
     pub filter_input: String,
     pub filtered_processes: Vec<SystemProcessInfo>,
-    
+
     // Status message for user feedback
     pub status_message: Option<String>,
     pub status_message_time: Option<SystemTime>,
@@ -72,7 +72,10 @@ impl App {
         let gpu = if enable_gpu {
             let manager = GPUManager::new();
             if manager.has_gpus() {
-                log::info!("GPU monitoring enabled: {} GPU(s) detected", manager.gpu_count());
+                log::info!(
+                    "GPU monitoring enabled: {} GPU(s) detected",
+                    manager.gpu_count()
+                );
                 Some(manager)
             } else {
                 log::warn!("GPU monitoring enabled but no GPUs detected");
@@ -92,7 +95,7 @@ impl App {
         let notifier = Notifier::new(config.alerts.notifications_enabled);
         let trend_analyzer = TrendAnalyzer::new(config.trends.clone());
         let history = MetricsHistory::new(config.refresh.history_samples, gpu_count);
-        
+
         Ok(Self {
             alert_detector,
             notifier,
@@ -125,12 +128,12 @@ impl App {
     pub fn update(&mut self) -> Result<()> {
         if !self.paused {
             self.metrics.refresh();
-            
+
             let timestamp = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs();
-            
+
             let cpu_usage = self.metrics.global_cpu_usage();
             let mem_usage = self.metrics.memory_usage_percent();
             let swap_usage = self.metrics.swap_usage_percent();
@@ -141,10 +144,16 @@ impl App {
             } else {
                 Vec::new()
             };
-            
+
             // Update history
-            self.history.update(timestamp, cpu_usage, mem_usage, swap_usage, &self.gpu_info_cache);
-            
+            self.history.update(
+                timestamp,
+                cpu_usage,
+                mem_usage,
+                swap_usage,
+                &self.gpu_info_cache,
+            );
+
             // Check alerts
             let alerts = self.alert_detector.check_alerts(
                 cpu_usage,
@@ -153,35 +162,34 @@ impl App {
                 swap_total,
                 &self.gpu_info_cache,
             );
-            
+
             // Send notifications for critical/warning alerts
             for alert in &alerts {
                 if self.alert_detector.should_notify(&alert.alert_type) {
                     self.notifier.send_alert(alert);
                 }
             }
-            
+
             self.active_alerts = alerts;
         }
 
         // Analyze trends
         if self.config.trends.enabled && !self.paused {
-            self.active_trends = self.trend_analyzer.analyze_all(
-                &self.history,
-                &self.config.alerts
-            );
+            self.active_trends = self
+                .trend_analyzer
+                .analyze_all(&self.history, &self.config.alerts);
         }
-        
+
         // Rebuild process tree if in tree mode
         if self.tree_mode {
             self.rebuild_tree();
         }
-        
+
         // Reapply filter if filter is active
         if self.filter_mode && !self.filter_input.is_empty() {
             self.apply_filter();
         }
-        
+
         // Update status message (clear old ones)
         self.update_status_message();
 
@@ -277,7 +285,7 @@ impl App {
 
     pub fn get_selected_pid(&self) -> Option<u32> {
         let processes = self.current_processes();
-        
+
         processes.get(self.selected_process_index).map(|p| p.pid)
     }
 
@@ -292,7 +300,8 @@ impl App {
         };
 
         // Group by TGID (thread-group / main PID). Aggregate CPU and memory.
-        let mut grouped: std::collections::HashMap<u32, SystemProcessInfo> = std::collections::HashMap::new();
+        let mut grouped: std::collections::HashMap<u32, SystemProcessInfo> =
+            std::collections::HashMap::new();
 
         for p in base_list {
             let key = p.tgid;
@@ -303,7 +312,7 @@ impl App {
                     agg.memory_kb = agg.memory_kb.saturating_add(p.memory_kb);
                 })
                 .or_insert_with(|| SystemProcessInfo {
-                    pid: key,   // represent the group by its TGID
+                    pid: key, // represent the group by its TGID
                     tgid: key,
                     name: p.name.clone(),
                     cmd: p.cmd.clone(),
@@ -336,16 +345,20 @@ impl App {
     fn sorted_processes(&self, mut processes: Vec<SystemProcessInfo>) -> Vec<SystemProcessInfo> {
         match self.process_sort {
             ProcessSortMode::Cpu => {
-                processes.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap_or(std::cmp::Ordering::Equal));
+                processes.sort_by(|a, b| {
+                    b.cpu_usage
+                        .partial_cmp(&a.cpu_usage)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
             }
             ProcessSortMode::Memory => {
-                processes.sort_by(|a, b| b.memory_kb.cmp(&a.memory_kb));
+                processes.sort_by_key(|a| std::cmp::Reverse(a.memory_kb));
             }
             ProcessSortMode::Name => {
                 processes.sort_by(|a, b| a.name.cmp(&b.name));
             }
             ProcessSortMode::Pid => {
-                processes.sort_by(|a, b| a.pid.cmp(&b.pid));
+                processes.sort_by_key(|a| a.pid);
             }
         }
         processes
@@ -398,13 +411,13 @@ impl App {
         self.close_dialog();
         Ok(())
     }
-    
+
     /// Smart kill with escalation (SIGTERM -> SIGKILL) - async version
     pub async fn smart_kill_selected_process(&mut self) -> Result<()> {
         if let Some(pid) = self.get_selected_pid() {
             log::info!("Smart killing process with PID: {}", pid);
             self.set_status_message(format!("Sending SIGTERM to process {}, waiting...", pid));
-            
+
             match smart_kill(pid).await {
                 Ok(msg) => {
                     self.set_status_message(msg);
@@ -417,7 +430,7 @@ impl App {
         self.close_dialog();
         Ok(())
     }
-    
+
     /// Toggle tree view mode
     pub fn toggle_tree_mode(&mut self) {
         self.tree_mode = !self.tree_mode;
@@ -428,20 +441,21 @@ impl App {
             self.set_status_message("Tree view disabled".to_string());
         }
     }
-    
+
     /// Rebuild process tree
     pub fn rebuild_tree(&mut self) {
         let all_processes = self.metrics.all_processes();
         self.process_tree.build_from_processes(all_processes);
-        self.process_tree.calculate_render_order(&self.collapsed_pids);
+        self.process_tree
+            .calculate_render_order(&self.collapsed_pids);
     }
-    
+
     /// Toggle collapse/expand of selected process in tree
     pub fn toggle_collapse_selected(&mut self) {
         if !self.tree_mode {
             return;
         }
-        
+
         if let Some(pid) = self.get_selected_pid() {
             if self.process_tree.has_children(pid) {
                 if self.collapsed_pids.contains(&pid) {
@@ -451,18 +465,19 @@ impl App {
                     self.collapsed_pids.insert(pid);
                     self.set_status_message(format!("Collapsed process {}", pid));
                 }
-                self.process_tree.calculate_render_order(&self.collapsed_pids);
+                self.process_tree
+                    .calculate_render_order(&self.collapsed_pids);
             }
         }
     }
-    
+
     /// Enter filter mode
     pub fn enter_filter_mode(&mut self) {
         self.filter_mode = true;
         self.filter_input.clear();
         self.set_status_message("Filter: (type to search, ESC to cancel)".to_string());
     }
-    
+
     /// Exit filter mode
     pub fn exit_filter_mode(&mut self) {
         self.filter_mode = false;
@@ -470,19 +485,19 @@ impl App {
         self.filtered_processes.clear();
         self.set_status_message("Filter cleared".to_string());
     }
-    
+
     /// Add character to filter input
     pub fn filter_input_char(&mut self, c: char) {
         self.filter_input.push(c);
         self.apply_filter();
     }
-    
+
     /// Remove last character from filter input
     pub fn filter_backspace(&mut self) {
         self.filter_input.pop();
         self.apply_filter();
     }
-    
+
     /// Apply current filter to process list
     pub fn apply_filter(&mut self) {
         let mut processes = if self.filter_input.is_empty() {
@@ -504,14 +519,14 @@ impl App {
         self.filtered_processes = processes;
         self.clamp_process_selection();
     }
-    
+
     /// Set status message with timestamp
     pub fn set_status_message(&mut self, msg: String) {
         log::info!("Status: {}", msg);
         self.status_message = Some(msg);
         self.status_message_time = Some(SystemTime::now());
     }
-    
+
     /// Clear status message if older than 5 seconds
     pub fn update_status_message(&mut self) {
         if let Some(time) = self.status_message_time {

@@ -57,7 +57,9 @@ impl<T: Clone> CircularBuffer<T> {
     }
 
     pub fn get_at(&self, index: usize) -> Option<(u64, T)> {
-        self.data.get(index).map(|dp| (dp.timestamp, dp.value.clone()))
+        self.data
+            .get(index)
+            .map(|dp| (dp.timestamp, dp.value.clone()))
     }
 }
 
@@ -82,13 +84,20 @@ impl MetricsHistory {
             cpu_usage: CircularBuffer::new(capacity),
             memory_usage: CircularBuffer::new(capacity),
             swap_usage: CircularBuffer::new(capacity),
-            gpu_temp: (0..gpu_count).map(|_| CircularBuffer::new(capacity)).collect(),
-            gpu_util: (0..gpu_count).map(|_| CircularBuffer::new(capacity)).collect(),
-            gpu_mem: (0..gpu_count).map(|_| CircularBuffer::new(capacity)).collect(),
+            gpu_temp: (0..gpu_count)
+                .map(|_| CircularBuffer::new(capacity))
+                .collect(),
+            gpu_util: (0..gpu_count)
+                .map(|_| CircularBuffer::new(capacity))
+                .collect(),
+            gpu_mem: (0..gpu_count)
+                .map(|_| CircularBuffer::new(capacity))
+                .collect(),
         }
     }
 
-    pub fn update(&mut self, 
+    pub fn update(
+        &mut self,
         timestamp: u64,
         cpu_usage: f32,
         memory_usage: f32,

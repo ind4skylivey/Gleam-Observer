@@ -1,5 +1,5 @@
-pub mod tree;
 pub mod signals;
+pub mod tree;
 
-pub use tree::{ProcessTree, ProcessNode};
-pub use signals::{smart_kill, force_kill, send_signal_to_process};
+pub use signals::{force_kill, send_signal_to_process, smart_kill};
+pub use tree::{ProcessNode, ProcessTree};

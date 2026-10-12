@@ -43,7 +43,8 @@ impl Notifier {
         #[cfg(not(unix))]
         {
             // For non-Unix systems, just log
-            log::warn!("Alert: {} - {}", 
+            log::warn!(
+                "Alert: {} - {}",
                 match alert.level {
                     AlertLevel::Critical => "CRITICAL",
                     AlertLevel::Warning => "WARNING",

@@ -32,11 +32,17 @@ impl EventHandler {
 }
 
 pub fn should_quit(key: &KeyEvent) -> bool {
-    matches!(key.code, KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc)
+    matches!(
+        key.code,
+        KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc
+    )
 }
 
 pub fn should_pause(key: &KeyEvent) -> bool {
-    matches!(key.code, KeyCode::Char('p') | KeyCode::Char('P') | KeyCode::Char(' '))
+    matches!(
+        key.code,
+        KeyCode::Char('p') | KeyCode::Char('P') | KeyCode::Char(' ')
+    )
 }
 
 pub fn should_toggle_view(key: &KeyEvent) -> bool {
