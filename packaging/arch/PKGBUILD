@@ -1,6 +1,6 @@
 # Maintainer: il1v3y <ind4skylivey@proton.me>
 pkgname=gleam-observer
-pkgver=1.5.2
+pkgver=1.5.4
 pkgrel=4
 pkgdesc="Universal Hardware Monitor - TUI with Cyberpunk Aesthetics"
 arch=('x86_64')

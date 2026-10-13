@@ -1,6 +1,6 @@
 [package]
 name = "gleam_observer"
-version = "1.5.2"
+version = "1.5.4"
 edition = "2021"
 authors = ["il1v3y"]
 description = "Universal Hardware Monitor - Cross-platform system and GPU monitoring"
