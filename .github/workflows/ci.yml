@@ -46,6 +46,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
       - uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c
       - run: cargo test --no-default-features
+      - name: GPU backend tests
+        run: cargo test --no-default-features --features nvidia,amd,intel
       - name: Headless smoke test
         run: |
           cargo build --no-default-features
