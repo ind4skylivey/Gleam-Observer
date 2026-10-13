@@ -384,3 +384,100 @@ impl GPUBackend for AmdBackend {
         Vec::new()
     }
 }
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::*;
+
+    fn make_backend(dir: &Path) -> AmdBackend {
+        let hwmon = dir.join("hwmon");
+        let device = dir.join("device");
+        std::fs::create_dir_all(&hwmon).unwrap();
+        std::fs::create_dir_all(&device).unwrap();
+        AmdBackend {
+            hwmon_path: hwmon,
+            device_path: device,
+            name: "Test AMD GPU".to_string(),
+        }
+    }
+
+    fn write(path: &Path, filename: &str, content: &str) {
+        std::fs::write(path.join(filename), content).unwrap();
+    }
+
+    fn temp_dir(tag: &str) -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("gleam-amd-test-{}-{}", tag, std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_temperature_parsing() {
+        let dir = temp_dir("temp");
+        let gpu = make_backend(&dir);
+        write(&gpu.hwmon_path, "temp1_input", "65000\n");
+        assert_eq!(gpu.temperature(), Some(65.0));
+
+        write(&gpu.hwmon_path, "temp1_input", "garbage\n");
+        assert_eq!(gpu.temperature(), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_utilization_and_memory_parsing() {
+        let dir = temp_dir("util");
+        let gpu = make_backend(&dir);
+        write(&gpu.device_path, "gpu_busy_percent", "42\n");
+        write(&gpu.device_path, "mem_info_vram_used", "1073741824\n");
+        write(&gpu.device_path, "mem_info_vram_total", "8589934592\n");
+        assert_eq!(gpu.utilization(), Some(42.0));
+        assert_eq!(gpu.memory_used(), Some(1073741824));
+        assert_eq!(gpu.memory_total(), Some(8589934592));
+
+        write(&gpu.device_path, "gpu_busy_percent", "\n");
+        assert_eq!(gpu.utilization(), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_power_parsing_microwatts() {
+        let dir = temp_dir("power");
+        let gpu = make_backend(&dir);
+        write(&gpu.hwmon_path, "power1_average", "25000000\n");
+        write(&gpu.hwmon_path, "power1_cap", "30000000\n");
+        assert_eq!(gpu.power_draw(), Some(25.0));
+        assert_eq!(gpu.power_limit(), Some(30.0));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_missing_files_return_none() {
+        let dir = temp_dir("missing");
+        let gpu = make_backend(&dir);
+        assert_eq!(gpu.temperature(), None);
+        assert_eq!(gpu.utilization(), None);
+        assert_eq!(gpu.memory_used(), None);
+        assert_eq!(gpu.memory_total(), None);
+        assert_eq!(gpu.power_draw(), None);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_detect_all_without_sysfs_errors() {
+        // On systems without /sys/class/drm or without AMD cards this must
+        // return a controlled error, never panic.
+        let result = AmdBackend::detect_all();
+        match result {
+            Ok(gpus) => assert!(!gpus.is_empty(), "unexpected AMD GPUs in test env"),
+            Err(e) => {
+                let msg = e.to_string();
+                assert!(
+                    msg.contains("No AMD GPUs") || msg.contains("/sys/class/drm"),
+                    "unexpected error: {msg}"
+                );
+            }
+        }
+    }
+}
