@@ -5,9 +5,13 @@ use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     pub refresh: RefreshConfig,
+    #[serde(default)]
     pub alerts: AlertsConfig,
+    #[serde(default)]
     pub display: DisplayConfig,
+    #[serde(default)]
     pub trends: TrendConfig,
 }
 
@@ -118,6 +122,52 @@ fn default_show_stable() -> bool {
     true
 } // Show all trends including stable ones for testing
 
+impl Default for RefreshConfig {
+    fn default() -> Self {
+        Self {
+            interval_ms: default_interval_ms(),
+            history_samples: default_history_samples(),
+        }
+    }
+}
+
+impl Default for AlertsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_enabled(),
+            notifications_enabled: default_notifications_enabled(),
+            notification_cooldown_secs: default_notification_cooldown(),
+            cpu_threshold: default_cpu_threshold(),
+            memory_threshold: default_memory_threshold(),
+            swap_threshold: default_swap_threshold(),
+            gpu_temp_threshold: default_gpu_temp_threshold(),
+            gpu_util_threshold: default_gpu_util_threshold(),
+            gpu_mem_threshold: default_gpu_mem_threshold(),
+        }
+    }
+}
+
+impl Default for DisplayConfig {
+    fn default() -> Self {
+        Self {
+            theme: default_theme(),
+            show_processes: default_show_processes(),
+            process_count: default_process_count(),
+        }
+    }
+}
+
+impl Default for TrendConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_trend_enabled(),
+            sample_interval_secs: default_sample_interval(),
+            min_confidence: default_min_confidence(),
+            show_stable_trends: default_show_stable(),
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -226,6 +276,19 @@ cpu_threshold = 70.0
         assert_eq!(config.alerts.memory_threshold, 90.0);
         assert_eq!(config.display.theme, "dark");
         assert_eq!(config.display.process_count, 10);
+        assert!(config.trends.enabled);
+    }
+
+    #[test]
+    fn test_toml_without_sections_fills_all_defaults() {
+        let content = r#"
+[refresh]
+interval_ms = 500
+"#;
+        let config: Config = toml::from_str(content).expect("missing sections should default");
+        assert_eq!(config.refresh.interval_ms, 500);
+        assert_eq!(config.alerts.cpu_threshold, 85.0);
+        assert_eq!(config.display.theme, "dark");
         assert!(config.trends.enabled);
     }
 
