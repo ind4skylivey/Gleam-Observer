@@ -59,7 +59,7 @@ detect_display() {
     if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
         print_warning "No graphical session detected (DISPLAY/WAYLAND_DISPLAY not set)"
         print_info "Continuing in headless mode (daemon will still work)"
-        return 1
+        return 0
     else
         if [ -n "$DISPLAY" ]; then
             print_success "X11 detected (DISPLAY=$DISPLAY)"
@@ -188,12 +188,17 @@ build_binary() {
     fi
     
     print_info "Building with features: nvidia, amd, intel, systray"
-    cargo build --release --features nvidia,amd,intel,systray 2>&1 | grep -E "(Compiling|Finished|error|warning)" | tail -20
+    if ! cargo build --release --features nvidia,amd,intel,systray > /tmp/gleam_build.log 2>&1; then
+        print_error "Build failed. Last lines of build output:"
+        tail -25 /tmp/gleam_build.log >&2
+        print_info "Common causes: missing GTK/libappindicator development packages (systray), or missing systemd development files."
+        exit 1
+    fi
     
     if [ -f "target/release/gleam" ]; then
         print_success "Binary built successfully: $(ls -lh target/release/gleam | awk '{print $5}')"
     else
-        print_error "Build failed - binary not found"
+        print_error "Build produced no binary"
         exit 1
     fi
 }
