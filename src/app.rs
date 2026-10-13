@@ -49,6 +49,7 @@ pub struct App {
     pub view_mode: ViewMode,
     pub process_sort: ProcessSortMode,
     pub selected_process_index: usize,
+    pub selected_pid: Option<u32>,
     pub dialog_mode: DialogMode,
     pub playback_index: Option<usize>,
 
@@ -111,6 +112,7 @@ impl App {
             view_mode: ViewMode::Dashboard,
             process_sort: ProcessSortMode::Cpu,
             selected_process_index: 0,
+            selected_pid: None,
             dialog_mode: DialogMode::None,
             playback_index: None,
             tree_mode: false,
@@ -193,8 +195,8 @@ impl App {
         // Update status message (clear old ones)
         self.update_status_message();
 
-        // Keep selection within current process bounds
-        self.clamp_process_selection();
+        // Keep the cursor on the same process across re-sorting refreshes
+        self.restabilize_selection();
 
         Ok(())
     }
@@ -268,12 +270,16 @@ impl App {
             ProcessSortMode::Name => ProcessSortMode::Pid,
             ProcessSortMode::Pid => ProcessSortMode::Cpu,
         };
+        // Changing the sort order re-orders the visible list; keep the
+        // cursor on the same process.
+        self.restabilize_selection();
     }
 
     pub fn move_selection_up(&mut self) {
         if self.selected_process_index > 0 {
             self.selected_process_index -= 1;
         }
+        self.sync_selected_pid();
     }
 
     pub fn move_selection_down(&mut self) {
@@ -281,11 +287,34 @@ impl App {
         if self.selected_process_index < max.saturating_sub(1) {
             self.selected_process_index += 1;
         }
+        self.sync_selected_pid();
+    }
+
+    /// Anchor the selection to the PID currently under the cursor so the
+    /// next refresh can restore the cursor onto the same process even
+    /// after the list is re-sorted.
+    pub fn sync_selected_pid(&mut self) {
+        let processes = self.current_processes();
+        self.selected_pid = processes.get(self.selected_process_index).map(|p| p.pid);
+    }
+
+    /// After a refresh re-sorts the list, move the cursor back onto the
+    /// anchored PID. If that process disappeared, keep the cursor at the
+    /// nearest valid row and re-anchor there.
+    pub fn restabilize_selection(&mut self) {
+        if let Some(pid) = self.selected_pid {
+            let processes = self.current_processes();
+            if let Some(pos) = processes.iter().position(|p| p.pid == pid) {
+                self.selected_process_index = pos;
+                return;
+            }
+        }
+        self.clamp_process_selection();
+        self.sync_selected_pid();
     }
 
     pub fn get_selected_pid(&self) -> Option<u32> {
         let processes = self.current_processes();
-
         processes.get(self.selected_process_index).map(|p| p.pid)
     }
 
@@ -298,6 +327,8 @@ impl App {
         } else {
             self.metrics.all_processes()
         };
+        // Both paths go through the same grouping and sorting below, so
+        // the visible order never diverges between filtered and unfiltered.
 
         // Group by TGID (thread-group / main PID). Aggregate CPU and memory.
         let mut grouped: std::collections::HashMap<u32, SystemProcessInfo> =
@@ -500,11 +531,12 @@ impl App {
 
     /// Apply current filter to process list
     pub fn apply_filter(&mut self) {
-        let mut processes = if self.filter_input.is_empty() {
-            self.metrics.all_processes()
+        if self.filter_input.is_empty() {
+            self.filtered_processes = self.metrics.all_processes();
         } else {
             let filter_lower = self.filter_input.to_lowercase();
-            self.metrics
+            self.filtered_processes = self
+                .metrics
                 .all_processes()
                 .into_iter()
                 .filter(|p| {
@@ -512,12 +544,11 @@ impl App {
                         || p.cmd.to_lowercase().contains(&filter_lower)
                         || p.pid.to_string().contains(&filter_lower)
                 })
-                .collect()
-        };
-
-        processes = self.sorted_processes(processes);
-        self.filtered_processes = processes;
-        self.clamp_process_selection();
+                .collect();
+        }
+        // Re-anchor: after the visible list changes, the cursor may point
+        // elsewhere; keep it on the same process when it still matches.
+        self.restabilize_selection();
     }
 
     /// Set status message with timestamp
