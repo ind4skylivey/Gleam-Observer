@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: linux-x86_64
+            features: "--no-default-features"
+            args: ""
+          - name: linux-x86_64-full
+            features: ""
+            args: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249
+        with:
+          toolchain: stable
+
+      - name: Install tray dependencies
+        if: matrix.features == ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libayatana-appindicator3-dev
+
+      - name: Build release binary
+        run: cargo build --release ${{ matrix.features }} ${{ matrix.args }}
+
+      - name: Package
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          mkdir -p dist
+          tar -czf "dist/gleam-observer-${tag}-${{ matrix.name }}.tar.gz" \
+            -C target/release gleam
+          if [ -f target/release/gleam-tray ]; then
+            tar -czf "dist/gleam-observer-${tag}-${{ matrix.name }}-tray.tar.gz" \
+              -C target/release gleam-tray
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dist-${{ matrix.name }}
+          path: dist/
+
+  release:
+    name: Create GitHub Release
+    needs: build-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c809f
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3a62228
+        with:
+          draft: true
+          generate_release_notes: true
+          files: dist/*
