@@ -247,13 +247,9 @@ This automatically:
 
 **Package Manager Install:**
 
-```bash
-# Arch Linux / Manjaro / EndeavourOS
-yay -S gleam-observer
-
-# AUR link
-# https://aur.archlinux.org/packages/gleam-observer
-```
+> **⚠️ AUR package unmaintained:** the `gleam-observer` AUR package is no
+> longer maintained by the author and is not updated for recent releases.
+> Use the pre-compiled release binaries or build from source instead.
 
 > **💡 Primary Usage: TUI Monitor**  
 > GleamObserver is a powerful **TUI (Terminal UI) monitor**, perfect for window managers like DWM, i3, Awesome.  
@@ -384,6 +380,14 @@ sudo dnf install gtk3-devel libayatana-appindicator3-devel
 ### Option 1: Pre-compiled Binary (Easiest)
 
 **Download the latest release:**
+
+| Tarball | Use it for |
+|---|---|
+| `linux-x86_64.tar.gz` | Base TUI, no extra system dependencies (servers, minimal setups) |
+| `linux-x86_64-full.tar.gz` | Workstations with GPUs (NVIDIA/AMD/Intel monitoring enabled) |
+| `*-tray.tar.gz` | System tray daemon variant (experimental, requires GTK/libappindicator) |
+
+If no GPU metrics show up, you installed the base build — use the `-full` tarball.
 
 ```bash
 # Download and extract v1.5.4
