@@ -51,6 +51,9 @@ pub struct App {
     pub selected_process_index: usize,
     pub selected_pid: Option<u32>,
     pub dialog_mode: DialogMode,
+    /// PID frozen when the dialog was opened, so confirming acts on the
+    /// process shown in the dialog even if a refresh re-sorted the list.
+    pub dialog_pid: Option<u32>,
     pub playback_index: Option<usize>,
 
     // Tree view support
@@ -114,6 +117,7 @@ impl App {
             selected_process_index: 0,
             selected_pid: None,
             dialog_mode: DialogMode::None,
+            dialog_pid: None,
             playback_index: None,
             tree_mode: false,
             process_tree: ProcessTree::new(),
@@ -396,10 +400,12 @@ impl App {
     }
 
     pub fn show_kill_dialog(&mut self) {
+        self.dialog_pid = self.get_selected_pid();
         self.dialog_mode = DialogMode::ConfirmKill;
     }
 
     pub fn show_terminate_dialog(&mut self) {
+        self.dialog_pid = self.get_selected_pid();
         self.dialog_mode = DialogMode::ConfirmTerminate;
     }
 
@@ -408,11 +414,13 @@ impl App {
     }
 
     pub fn close_dialog(&mut self) {
+        self.dialog_pid = None;
         self.dialog_mode = DialogMode::None;
     }
 
     pub fn kill_selected_process(&mut self) -> Result<()> {
-        if let Some(pid) = self.get_selected_pid() {
+        let target = self.dialog_pid.or_else(|| self.get_selected_pid());
+        if let Some(pid) = target {
             log::info!("Force killing process with PID: {}", pid);
             match force_kill(pid) {
                 Ok(msg) => {
@@ -428,7 +436,8 @@ impl App {
     }
 
     pub fn terminate_selected_process(&mut self) -> Result<()> {
-        if let Some(pid) = self.get_selected_pid() {
+        let target = self.dialog_pid.or_else(|| self.get_selected_pid());
+        if let Some(pid) = target {
             log::info!("Terminating process with PID: {} (graceful)", pid);
             match crate::process::signals::terminate(pid) {
                 Ok(msg) => {
