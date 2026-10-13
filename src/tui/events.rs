@@ -81,7 +81,11 @@ pub fn should_show_terminate_dialog(key: &KeyEvent) -> bool {
 }
 
 pub fn should_toggle_tree(key: &KeyEvent) -> bool {
+    // Ctrl+T is the terminate dialog; plain 't' toggles the tree view.
     matches!(key.code, KeyCode::Char('t'))
+        && !key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
 }
 
 pub fn should_enter_filter(key: &KeyEvent) -> bool {
