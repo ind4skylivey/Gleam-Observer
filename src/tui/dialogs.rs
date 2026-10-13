@@ -11,7 +11,10 @@ use ratatui::{
 pub fn draw_confirm_dialog(f: &mut Frame, title: &str, message: &str, app: &App) {
     let area = centered_rect(60, 30, f.area());
 
-    let pid = app.get_selected_pid().unwrap_or(0);
+    let pid = app
+        .dialog_pid
+        .or_else(|| app.get_selected_pid())
+        .unwrap_or(0);
 
     let text = vec![
         Line::from(""),
