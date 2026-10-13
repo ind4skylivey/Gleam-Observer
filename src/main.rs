@@ -2,7 +2,7 @@ use clap::Parser;
 use fs2::FileExt;
 use gleam_observer::{App, Config, Result};
 use std::fs::OpenOptions;
-use std::io::{Read, Write};
+use std::io::{Read, Seek, Write};
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -105,7 +105,7 @@ fn main() -> Result<()> {
 fn ensure_single_tui_instance() -> Result<std::fs::File> {
     let lock_path = lock_file_path();
 
-    let file = OpenOptions::new()
+    let mut file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
@@ -132,7 +132,12 @@ fn ensure_single_tui_instance() -> Result<std::fs::File> {
 
     // Record our PID for visibility.
     file.set_len(0).ok();
-    let _ = write!(std::io::BufWriter::new(&file), "{}", std::process::id());
+    file.seek(std::io::SeekFrom::Start(0)).ok();
+    {
+        let mut w = std::io::BufWriter::new(&file);
+        let _ = write!(w, "{}", std::process::id());
+        let _ = w.flush();
+    }
 
     Ok(file)
 }

@@ -102,7 +102,7 @@ Built with **Rust 🦀** for power users who demand both **style and substance**
 - 🌐 **Universal GPU Support**: NVIDIA (NVML), AMD (sysfs/hwmon), Intel Arc (basic)
 - 📊 **Historical Tracking**: Sparklines, time-travel mode, configurable retention
 - 🚨 **Smart Notifications**: Per-alert-type cooldown to prevent spam
-- ⚡ **Zero Dependencies**: Single binary, no external libraries required
+- ⚡ **Single Binary**: One static binary covers TUI, headless and tray modes
 
 ---
 
@@ -362,6 +362,23 @@ sudo apt install libnotify-bin
 
 # Fedora
 sudo dnf install libnotify
+```
+
+**System Tray (optional, for `gleam-tray`):**
+
+The tray daemon links against GTK and libappindicator. If you build with the
+default features (`systray`) you need these development packages; otherwise
+build with `--no-default-features` for a pure TUI/headless build.
+
+```bash
+# Arch Linux
+sudo pacman -S gtk3 libappindicator-gtk3
+
+# Ubuntu/Debian
+sudo apt install libgtk-3-dev libayatana-appindicator3-dev
+
+# Fedora
+sudo dnf install gtk3-devel libayatana-appindicator3-devel
 ```
 
 ### Option 1: Pre-compiled Binary (Easiest)
