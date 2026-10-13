@@ -47,14 +47,44 @@ struct Args {
     ui_only: bool,
 }
 
+struct MultiLogger {
+    file: &'static gleam_observer::logger::FileLogger,
+}
+
+impl log::Log for MultiLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= log::Level::Debug
+    }
+
+    fn log(&self, record: &log::Record) {
+        let line = format!(
+            "[{}] [{}] {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            record.level(),
+            record.args()
+        );
+        self.file.write_line(&line);
+    }
+
+    fn flush(&self) {
+        self.file.flush();
+    }
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    if args.verbose {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
-    } else {
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-    }
+    let default_filter = if args.verbose { "debug" } else { "info" };
+    let file_logger = Box::new(gleam_observer::logger::FileLogger::init_default());
+    let file_logger: &'static gleam_observer::logger::FileLogger = Box::leak(file_logger);
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(default_filter))
+        .init();
+    // File logging runs alongside stderr; direct writes always record to file.
+    let _ = log::set_boxed_logger(Box::new(MultiLogger { file: file_logger }));
+    file_logger.write_line(&format!(
+        "=== Starting GleamObserver v{} ===",
+        env!("CARGO_PKG_VERSION")
+    ));
 
     log::info!("Starting GleamObserver v{}", env!("CARGO_PKG_VERSION"));
 

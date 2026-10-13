@@ -386,9 +386,9 @@ sudo dnf install gtk3-devel libayatana-appindicator3-devel
 **Download the latest release:**
 
 ```bash
-# Download and extract v1.5.2
-wget https://github.com/ind4skylivey/Gleam-Observer/releases/download/v1.5.2/gleam-observer-v1.5.2-linux-x86_64.tar.gz
-tar -xzf gleam-observer-v1.5.2-linux-x86_64.tar.gz
+# Download and extract v1.5.4
+wget https://github.com/ind4skylivey/Gleam-Observer/releases/download/v1.5.4/gleam-observer-v1.5.4-linux-x86_64.tar.gz
+tar -xzf gleam-observer-v1.5.4-linux-x86_64.tar.gz
 
 # Install to system
 sudo mv gleam /usr/local/bin/
