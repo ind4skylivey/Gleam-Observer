@@ -131,3 +131,72 @@ impl MetricsHistory {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_circular_buffer_respects_capacity() {
+        let mut buf = CircularBuffer::new(3);
+        for i in 0..10 {
+            buf.push(i, i as u64);
+        }
+        assert_eq!(buf.len(), 3);
+        let values = buf.get_values();
+        assert_eq!(values, vec![7, 8, 9]);
+    }
+
+    #[test]
+    fn test_circular_buffer_latest_and_at() {
+        let mut buf = CircularBuffer::new(5);
+        assert!(buf.is_empty());
+        assert!(buf.get_latest().is_none());
+        buf.push(42.0, 100);
+        assert_eq!(buf.get_latest(), Some(&42.0));
+        assert_eq!(buf.get_at(0), Some((100, 42.0)));
+        assert_eq!(buf.get_at(1), None);
+    }
+
+    #[test]
+    fn test_circular_buffer_clear() {
+        let mut buf = CircularBuffer::new(5);
+        buf.push(1.0, 1);
+        buf.clear();
+        assert!(buf.is_empty());
+    }
+
+    #[test]
+    fn test_metrics_history_update_and_gpu_resize() {
+        let mut history = MetricsHistory::new(10, 0);
+        history.update(1, 50.0, 60.0, 0.0, &[]);
+        assert_eq!(history.cpu_usage.get_latest(), Some(&50.0));
+        assert_eq!(history.memory_usage.get_latest(), Some(&60.0));
+
+        history.resize_gpu_buffers(2, 10);
+        assert_eq!(history.gpu_temp.len(), 2);
+        assert_eq!(history.gpu_util.len(), 2);
+        assert_eq!(history.gpu_mem.len(), 2);
+
+        let gpu_info = crate::gpu::GPUInfo {
+            id: 0,
+            name: "Test GPU".to_string(),
+            vendor: "Test".to_string(),
+            temperature: Some(70.0),
+            utilization: Some(80.0),
+            memory_used: Some(1024),
+            memory_total: Some(2048),
+            power_draw: None,
+            power_limit: None,
+            power_efficiency: None,
+            clock_speed: None,
+            memory_clock: None,
+            fan_speed: None,
+            processes: Vec::new(),
+        };
+        history.update(2, 51.0, 61.0, 0.0, &[gpu_info]);
+        assert_eq!(history.gpu_temp[0].get_latest(), Some(&70.0));
+        assert_eq!(history.gpu_util[0].get_latest(), Some(&80.0));
+        assert_eq!(history.gpu_mem[0].get_latest(), Some(&50.0));
+    }
+}

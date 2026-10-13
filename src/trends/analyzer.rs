@@ -241,3 +241,118 @@ impl TrendAnalyzer {
         (slope, intercept, r_squared)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{AlertsConfig, TrendConfig};
+
+    fn trend_config() -> TrendConfig {
+        TrendConfig {
+            enabled: true,
+            sample_interval_secs: 1,
+            min_confidence: 0.5,
+            show_stable_trends: true,
+        }
+    }
+
+    fn alert_config() -> AlertsConfig {
+        AlertsConfig {
+            enabled: true,
+            notifications_enabled: true,
+            notification_cooldown_secs: 60,
+            cpu_threshold: 85.0,
+            memory_threshold: 90.0,
+            swap_threshold: 80.0,
+            gpu_temp_threshold: 75.0,
+            gpu_util_threshold: 95.0,
+            gpu_mem_threshold: 90.0,
+        }
+    }
+
+    #[test]
+    fn test_insufficient_data_returns_no_trends() {
+        let analyzer = TrendAnalyzer::new(trend_config());
+        let history = MetricsHistory::new(60, 0);
+        let trends = analyzer.analyze_all(&history, &alert_config());
+        assert!(trends.is_empty());
+    }
+
+    #[test]
+    fn test_increasing_cpu_trend_detected() {
+        let analyzer = TrendAnalyzer::new(trend_config());
+        let mut history = MetricsHistory::new(60, 0);
+        for i in 0..10 {
+            let cpu = 50.0 + i as f32 * 2.0;
+            history.update(i as u64, cpu, 50.0, 0.0, &[]);
+        }
+        let trends = analyzer.analyze_all(&history, &alert_config());
+        let cpu_trend = trends
+            .iter()
+            .find(|t| matches!(t.metric, TrendType::Cpu))
+            .expect("CPU trend should be detected");
+        assert_eq!(cpu_trend.direction, TrendDirection::Increasing);
+        assert!(cpu_trend.rate_per_minute > 0.0);
+        assert!(cpu_trend.confidence > 0.5);
+        assert!(cpu_trend.predicted_value_5min > 50.0);
+    }
+
+    #[test]
+    fn test_stable_trend_filtered_by_confidence() {
+        // Perfectly constant data has R^2 = 0 (ss_tot = 0), so the trend
+        // is classified Stable but filtered out by min_confidence.
+        let analyzer = TrendAnalyzer::new(trend_config());
+        let mut history = MetricsHistory::new(60, 0);
+        for i in 0..10 {
+            history.update(i as u64, 55.0, 55.0, 0.0, &[]);
+        }
+        let trends = analyzer.analyze_all(&history, &alert_config());
+        assert!(!trends.iter().any(|t| matches!(t.metric, TrendType::Cpu)));
+
+        // A tiny but perfectly linear ramp has R^2 = 1.0, so it passes the
+        // confidence filter while the slope still classifies as Stable.
+        let mut history2 = MetricsHistory::new(60, 0);
+        for i in 0..10 {
+            let cpu = 55.0 + (i as f32) * 0.005;
+            history2.update(i as u64, cpu, 55.0, 0.0, &[]);
+        }
+        let trends2 = analyzer.analyze_all(&history2, &alert_config());
+        let cpu_trend = trends2
+            .iter()
+            .find(|t| matches!(t.metric, TrendType::Cpu))
+            .expect("linear ramp should pass confidence filter");
+        assert_eq!(cpu_trend.direction, TrendDirection::Stable);
+        assert_eq!(cpu_trend.time_to_threshold, None);
+    }
+
+    #[test]
+    fn test_disabled_analyzer_returns_nothing() {
+        let mut config = trend_config();
+        config.enabled = false;
+        let analyzer = TrendAnalyzer::new(config);
+        let mut history = MetricsHistory::new(60, 0);
+        for i in 0..10 {
+            history.update(i as u64, 50.0 + i as f32, 50.0, 0.0, &[]);
+        }
+        assert!(analyzer.analyze_all(&history, &alert_config()).is_empty());
+    }
+
+    #[test]
+    fn test_time_to_threshold_computed() {
+        let analyzer = TrendAnalyzer::new(trend_config());
+        let mut history = MetricsHistory::new(60, 0);
+        for i in 0..10 {
+            let cpu = 70.0 + i as f32;
+            history.update(i as u64, cpu, 50.0, 0.0, &[]);
+        }
+        let trends = analyzer.analyze_all(&history, &alert_config());
+        let cpu_trend = trends
+            .iter()
+            .find(|t| matches!(t.metric, TrendType::Cpu))
+            .expect("CPU trend should be detected");
+        assert_eq!(cpu_trend.direction, TrendDirection::Increasing);
+        assert!(cpu_trend.time_to_threshold.is_some());
+        let seconds = cpu_trend.time_to_threshold.unwrap();
+        assert!(seconds > 0 && seconds < 7200);
+    }
+}
