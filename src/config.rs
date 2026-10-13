@@ -186,3 +186,64 @@ impl Config {
         Ok(PathBuf::from(home).join(".config/gleam-observer/config.toml"))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config_values() {
+        let config = Config::default();
+        assert_eq!(config.refresh.interval_ms, 1000);
+        assert_eq!(config.refresh.history_samples, 60);
+        assert!(config.alerts.enabled);
+        assert_eq!(config.alerts.cpu_threshold, 85.0);
+        assert_eq!(config.alerts.memory_threshold, 90.0);
+        assert_eq!(config.display.theme, "dark");
+        assert_eq!(config.display.process_count, 10);
+        assert!(config.trends.enabled);
+    }
+
+    #[test]
+    fn test_partial_toml_fills_defaults() {
+        // Sections must be present (serde defaults apply per-field, not
+        // per-section), but missing fields inside them fall back to defaults.
+        let content = r#"
+[refresh]
+interval_ms = 500
+
+[alerts]
+cpu_threshold = 70.0
+
+[display]
+
+[trends]
+"#;
+        let config: Config = toml::from_str(content).expect("partial config should parse");
+        assert_eq!(config.refresh.interval_ms, 500);
+        assert_eq!(config.refresh.history_samples, 60);
+        assert_eq!(config.alerts.cpu_threshold, 70.0);
+        assert_eq!(config.alerts.memory_threshold, 90.0);
+        assert_eq!(config.display.theme, "dark");
+        assert_eq!(config.display.process_count, 10);
+        assert!(config.trends.enabled);
+    }
+
+    #[test]
+    fn test_invalid_toml_is_rejected() {
+        let result: std::result::Result<Config, toml::de::Error> =
+            toml::from_str("not [ valid toml");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_roundtrip_serialization() {
+        let config = Config::default();
+        let serialized = toml::to_string_pretty(&config).expect("serialize");
+        let parsed: Config = toml::from_str(&serialized).expect("reparse");
+        assert_eq!(parsed.refresh.interval_ms, config.refresh.interval_ms);
+        assert_eq!(parsed.alerts.cpu_threshold, config.alerts.cpu_threshold);
+        assert_eq!(parsed.display.theme, config.display.theme);
+        assert_eq!(parsed.trends.min_confidence, config.trends.min_confidence);
+    }
+}

@@ -255,3 +255,134 @@ impl AlertDetector {
             .count()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::AlertsConfig;
+
+    fn test_config() -> AlertsConfig {
+        AlertsConfig {
+            enabled: true,
+            notifications_enabled: true,
+            notification_cooldown_secs: 60,
+            cpu_threshold: 85.0,
+            memory_threshold: 90.0,
+            swap_threshold: 80.0,
+            gpu_temp_threshold: 75.0,
+            gpu_util_threshold: 95.0,
+            gpu_mem_threshold: 90.0,
+        }
+    }
+
+    fn test_gpu_info(
+        temp: Option<f32>,
+        util: Option<f32>,
+        mem_pct: Option<f32>,
+    ) -> crate::gpu::GPUInfo {
+        let (memory_used, memory_total) = match mem_pct {
+            Some(p) => (Some((p * 2048.0 / 100.0) as u64), Some(2048)),
+            None => (Some(1024), Some(2048)),
+        };
+        crate::gpu::GPUInfo {
+            id: 0,
+            name: "Test GPU".to_string(),
+            vendor: "Test".to_string(),
+            temperature: temp,
+            utilization: util,
+            memory_used,
+            memory_total,
+            power_draw: None,
+            power_limit: None,
+            power_efficiency: None,
+            clock_speed: None,
+            memory_clock: None,
+            fan_speed: None,
+            processes: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn test_no_alerts_below_thresholds() {
+        let mut detector = AlertDetector::new(test_config());
+        let alerts = detector.check_alerts(50.0, 60.0, 40.0, 8_000_000_000, &[]);
+        assert!(alerts.is_empty());
+        assert!(!detector.has_alerts());
+    }
+
+    #[test]
+    fn test_cpu_alert_levels() {
+        let mut detector = AlertDetector::new(test_config());
+
+        let warnings = detector.check_alerts(90.0, 50.0, 40.0, 8_000_000_000, &[]);
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].level, AlertLevel::Warning);
+        assert!(matches!(warnings[0].alert_type, AlertType::CpuUsage));
+
+        let criticals = detector.check_alerts(96.0, 50.0, 40.0, 8_000_000_000, &[]);
+        assert_eq!(criticals.len(), 1);
+        assert_eq!(criticals[0].level, AlertLevel::Critical);
+        assert_eq!(detector.critical_count(), 1);
+    }
+
+    #[test]
+    fn test_memory_and_swap_alerts() {
+        let mut detector = AlertDetector::new(test_config());
+
+        let alerts = detector.check_alerts(50.0, 96.0, 85.0, 8_000_000_000, &[]);
+        assert_eq!(alerts.len(), 2);
+        assert!(alerts
+            .iter()
+            .any(|a| matches!(a.alert_type, AlertType::MemoryUsage)
+                && a.level == AlertLevel::Critical));
+        assert!(alerts
+            .iter()
+            .any(|a| matches!(a.alert_type, AlertType::SwapUsage)));
+        assert_eq!(detector.warning_count(), 1);
+    }
+
+    #[test]
+    fn test_swap_ignored_when_disabled() {
+        let mut detector = AlertDetector::new(test_config());
+        let alerts = detector.check_alerts(50.0, 60.0, 99.0, 0, &[]);
+        assert!(alerts.is_empty());
+    }
+
+    #[test]
+    fn test_gpu_alerts() {
+        let mut detector = AlertDetector::new(test_config());
+        let hot_gpu = test_gpu_info(Some(80.0), Some(96.0), Some(95.0));
+
+        let alerts = detector.check_alerts(50.0, 50.0, 40.0, 8_000_000_000, &[hot_gpu]);
+        assert_eq!(alerts.len(), 3);
+        assert!(alerts
+            .iter()
+            .any(|a| matches!(a.alert_type, AlertType::GpuTemperature { .. })));
+        assert!(alerts
+            .iter()
+            .any(|a| matches!(a.alert_type, AlertType::GpuUtilization { .. })));
+        assert!(alerts
+            .iter()
+            .any(|a| matches!(a.alert_type, AlertType::GpuMemory { .. })));
+    }
+
+    #[test]
+    fn test_disabled_detector_returns_nothing() {
+        let mut config = test_config();
+        config.enabled = false;
+        let mut detector = AlertDetector::new(config);
+        let alerts = detector.check_alerts(99.0, 99.0, 99.0, 8_000_000_000, &[]);
+        assert!(alerts.is_empty());
+    }
+
+    #[test]
+    fn test_notification_cooldown() {
+        let mut detector = AlertDetector::new(test_config());
+        let alert_type = AlertType::CpuUsage;
+        assert!(detector.should_notify(&alert_type));
+        assert!(!detector.should_notify(&alert_type));
+
+        let other = AlertType::MemoryUsage;
+        assert!(detector.should_notify(&other));
+    }
+}
