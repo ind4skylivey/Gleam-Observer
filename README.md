@@ -14,7 +14,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Theme-Catppuccin%20Mocha-f5c2e7?style=flat-square&logo=starship&logoColor=white" alt="Theme">
   <img src="https://img.shields.io/badge/TUI-Ratatui-fab387?style=flat-square&logo=gnometerminal&logoColor=white" alt="TUI">
-  <img src="https://img.shields.io/badge/Code-4%2C232%20LOC-f9e2af?style=flat-square&logo=files&logoColor=white" alt="Lines">
+  <img src="https://img.shields.io/badge/Code-6%2C400%2B%20LOC-f9e2af?style=flat-square&logo=files&logoColor=white" alt="Lines">
   <img src="https://img.shields.io/badge/GPUs-130%2B%20Models-94e2d5?style=flat-square&logo=nvidia&logoColor=white" alt="GPU Database">
 </p>
 
