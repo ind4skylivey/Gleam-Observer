@@ -1,7 +1,7 @@
 pkgbase = gleam-observer
 	pkgdesc = Universal Hardware Monitor - TUI with Cyberpunk Aesthetics
 	pkgver = 1.5.2
-	pkgrel = 4
+	pkgrel = 1
 	url = https://github.com/ind4skylivey/Gleam-Observer
 	install = gleam-observer.install
 	arch = x86_64
