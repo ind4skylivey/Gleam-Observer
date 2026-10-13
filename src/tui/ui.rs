@@ -1185,7 +1185,7 @@ fn draw_footer(f: &mut Frame, area: Rect, app: &App) {
             Span::styled(" Kill", Style::default().fg(Theme::TEXT)),
             Span::raw("  │  "),
             Span::styled(
-                "[t]",
+                "[Ctrl+T]",
                 Style::default()
                     .fg(Theme::YELLOW)
                     .add_modifier(Modifier::BOLD),

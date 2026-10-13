@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use std::time::Duration;
 
 pub enum AppEvent {
@@ -20,7 +20,9 @@ impl EventHandler {
     pub fn next(&self) -> crate::error::Result<AppEvent> {
         if event::poll(self.tick_rate)? {
             match event::read()? {
-                Event::Key(key) => Ok(AppEvent::Key(key)),
+                // Terminals that report press and release would otherwise
+                // deliver every keystroke twice.
+                Event::Key(key) if key.kind == KeyEventKind::Press => Ok(AppEvent::Key(key)),
                 Event::Resize(w, h) => Ok(AppEvent::Resize(w, h)),
                 Event::Mouse(_) => Ok(AppEvent::Ignored), // Ignore mouse - don't update
                 _ => Ok(AppEvent::Tick),
@@ -70,8 +72,12 @@ pub fn should_show_kill_dialog(key: &KeyEvent) -> bool {
 }
 
 pub fn should_show_terminate_dialog(key: &KeyEvent) -> bool {
-    // Only 'T' (uppercase) for terminate to avoid conflict with tree toggle
+    // Ctrl+T for terminate; bare 't' toggles the tree view.
     matches!(key.code, KeyCode::Char('T'))
+        || (key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
+            && matches!(key.code, KeyCode::Char('t')))
 }
 
 pub fn should_toggle_tree(key: &KeyEvent) -> bool {
